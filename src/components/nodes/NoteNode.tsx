@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
-import { NodeResizer } from '@xyflow/react';
+import { NodeResizer, Handle, Position } from '@xyflow/react';
 import { StickyNote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
@@ -55,16 +55,27 @@ export const NoteNode = memo(({ data, selected, id }: NoteNodeProps) => {
   const color = data.color || 'yellow';
   const colorClasses = colorMap[color] || colorMap.yellow;
   const updateNoteContent = useStore((state) => state.updateNoteContent);
+  const updateNoteName = useStore((state) => state.updateNoteName);
 
-  // Local state for editing
+  // Local state for editing content
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(data.content);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Local state for editing name
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [localName, setLocalName] = useState(data.name || 'Note');
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Sync local state with data when it changes externally
   useEffect(() => {
     setContent(data.content);
   }, [data.content]);
+
+  // Sync name with data when it changes externally
+  useEffect(() => {
+    setLocalName(data.name || 'Note');
+  }, [data.name]);
 
   // Focus textarea when entering edit mode
   useEffect(() => {
@@ -77,6 +88,14 @@ export const NoteNode = memo(({ data, selected, id }: NoteNodeProps) => {
       );
     }
   }, [isEditing]);
+
+  // Focus name input when entering name edit mode
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
 
   const handleDoubleClick = useCallback(() => {
     setIsEditing(true);
@@ -104,6 +123,36 @@ export const NoteNode = memo(({ data, selected, id }: NoteNodeProps) => {
     setContent(e.target.value);
   }, []);
 
+  // Name editing handlers
+  const handleNameDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditingName(true);
+  }, []);
+
+  const handleNameBlur = useCallback(() => {
+    setIsEditingName(false);
+    if (localName !== (data.name || 'Note')) {
+      updateNoteName(id, localName);
+    }
+  }, [localName, data.name, id, updateNoteName]);
+
+  const handleNameKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setIsEditingName(false);
+      setLocalName(data.name || 'Note');
+    } else if (e.key === 'Enter') {
+      setIsEditingName(false);
+      if (localName !== (data.name || 'Note')) {
+        updateNoteName(id, localName);
+      }
+    }
+    e.stopPropagation();
+  }, [data.name, localName, id, updateNoteName]);
+
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalName(e.target.value);
+  }, []);
+
   return (
     <>
       {/* Resizer handles - only show when selected */}
@@ -113,6 +162,16 @@ export const NoteNode = memo(({ data, selected, id }: NoteNodeProps) => {
         isVisible={selected}
         lineClassName="!border-blue-500"
         handleClassName="!w-2 !h-2 !bg-blue-500 !border-white"
+      />
+
+      {/* Single connection handle for linking to tables */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="note"
+        isConnectableStart={true}
+        isConnectableEnd={true}
+        className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white dark:!border-slate-800"
       />
 
       {/* Note container */}
@@ -127,8 +186,27 @@ export const NoteNode = memo(({ data, selected, id }: NoteNodeProps) => {
       >
         {/* Header with icon */}
         <div className={cn('flex items-center gap-2 px-3 py-2 border-b', colorClasses.border)}>
-          <StickyNote className={cn('w-4 h-4', colorClasses.text)} />
-          <span className={cn('text-xs font-medium', colorClasses.text)}>Note</span>
+          <StickyNote className={cn('w-4 h-4 flex-shrink-0', colorClasses.text)} />
+          {isEditingName ? (
+            <input
+              ref={nameInputRef}
+              value={localName}
+              onChange={handleNameChange}
+              onBlur={handleNameBlur}
+              onKeyDown={handleNameKeyDown}
+              className={cn(
+                'text-xs font-medium bg-transparent border-none outline-none w-full',
+                colorClasses.text
+              )}
+            />
+          ) : (
+            <span
+              className={cn('text-xs font-medium cursor-pointer truncate', colorClasses.text)}
+              onDoubleClick={handleNameDoubleClick}
+            >
+              {data.name || 'Note'}
+            </span>
+          )}
         </div>
 
         {/* Content area */}

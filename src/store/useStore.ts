@@ -64,6 +64,7 @@ interface StoreState {
   // Actions - Note management
   updateNoteContent: (nodeId: string, content: string) => void;
   updateNoteColor: (nodeId: string, color: string) => void;
+  updateNoteName: (nodeId: string, name: string) => void;
 
   // Actions - Edge management
   updateEdgeCardinality: (edgeId: string, cardinality: Cardinality) => void;
@@ -145,6 +146,7 @@ export const useStore = create<StoreState>()(
           type: 'table',
           position,
           zIndex: 1,  // Above groups
+          style: { width: 250, height: 200 },
           data: {
             type: 'table',
             name: 'New Table',
@@ -195,6 +197,7 @@ export const useStore = create<StoreState>()(
           zIndex: 1,  // Above groups
           data: {
             type: 'note',
+            name: 'New Note',
             content: 'New note...',
           },
         };
@@ -373,6 +376,17 @@ export const useStore = create<StoreState>()(
         });
       },
 
+      updateNoteName: (nodeId, name) => {
+        get().saveToHistory();
+        set({
+          nodes: get().nodes.map((node) =>
+            node.id === nodeId && node.data.type === 'note'
+              ? { ...node, data: { ...node.data, name } }
+              : node
+          ) as DBNode[],
+        });
+      },
+
       // Edge management
       updateEdgeCardinality: (edgeId, cardinality) => {
         get().saveToHistory();
@@ -401,7 +415,13 @@ export const useStore = create<StoreState>()(
         set({
           edges: get().edges.map((edge) =>
             edge.id === edgeId
-              ? { ...edge, data: { ...edge.data, sourceColumn, targetColumn } }
+              ? {
+                  ...edge,
+                  // Update visual connection points to selected columns
+                  sourceHandle: sourceColumn ? `${sourceColumn}-right` : edge.sourceHandle,
+                  targetHandle: targetColumn ? `${targetColumn}-left` : edge.targetHandle,
+                  data: { ...edge.data, sourceColumn, targetColumn }
+                }
               : edge
           ) as DBEdge[],
         });

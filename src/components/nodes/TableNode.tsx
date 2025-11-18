@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, NodeResizer } from '@xyflow/react';
 import { Key, Link } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TableNodeData, Column } from '@/types';
@@ -7,6 +7,7 @@ import type { TableNodeData, Column } from '@/types';
 interface TableNodeProps {
   data: TableNodeData;
   selected?: boolean;
+  id: string;
 }
 
 // Color mapping for table header backgrounds
@@ -133,20 +134,30 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
 
 ColumnRow.displayName = 'ColumnRow';
 
-export const TableNode = memo(({ data, selected }: TableNodeProps) => {
+export const TableNode = memo(({ data, selected, id: _id }: TableNodeProps) => {
   const color = data.color || 'slate';
   const colorClasses = colorMap[color] || colorMap.slate;
 
   return (
-    <div
-      className={cn(
-        'min-w-[200px] max-w-[300px] overflow-hidden',
-        'bg-white dark:bg-slate-900',
-        'border rounded-lg shadow-md',
-        'border-border',
-        selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
-      )}
-    >
+    <>
+      {/* Resizer handles - only show when selected */}
+      <NodeResizer
+        minWidth={200}
+        minHeight={150}
+        isVisible={selected}
+        lineClassName="!border-blue-500"
+        handleClassName="!w-2 !h-2 !bg-blue-500 !border-white"
+      />
+
+      <div
+        className={cn(
+          'w-full h-full min-w-[200px] overflow-hidden flex flex-col',
+          'bg-white dark:bg-slate-900',
+          'border rounded-lg shadow-md',
+          'border-border',
+          selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
+        )}
+      >
       {/* Top handle for general connections */}
       <Handle
         type="target"
@@ -186,7 +197,7 @@ export const TableNode = memo(({ data, selected }: TableNodeProps) => {
       </div>
 
       {/* Columns list */}
-      <div className="max-h-[300px] overflow-y-auto overflow-x-hidden bg-white dark:bg-slate-900">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white dark:bg-slate-900">
         {data.columns.length > 0 ? (
           data.columns.map((column) => (
             <ColumnRow key={column.id} column={column} />
@@ -210,6 +221,7 @@ export const TableNode = memo(({ data, selected }: TableNodeProps) => {
         )}
       />
     </div>
+    </>
   );
 });
 
