@@ -15,6 +15,7 @@ import { edgeTypes } from '@/components/edges';
 import { Toolbar } from '@/components/Toolbar';
 import { PropertiesPanel } from '@/components/panels';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { CoordinatesDisplay } from '@/components/CoordinatesDisplay';
 
 function Flow() {
   const {
@@ -121,6 +122,7 @@ function Flow() {
         pannable
         className="!bg-card border border-border rounded-md shadow-md"
       />
+      <CoordinatesDisplay />
     </ReactFlow>
   );
 }
