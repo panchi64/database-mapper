@@ -5,17 +5,30 @@ export function useFileOperations() {
   const exportDiagram = useStore((state) => state.exportDiagram);
   const importDiagram = useStore((state) => state.importDiagram);
 
-  const saveDiagram = () => {
+  const saveDiagram = async () => {
     const data = exportDiagram();
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: 'application/json',
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'database-diagram.json';
-    a.click();
-    URL.revokeObjectURL(url);
+
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: 'database-diagram.json',
+        types: [
+          {
+            description: 'JSON Files',
+            accept: { 'application/json': ['.json'] },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        throw err;
+      }
+    }
   };
 
   const loadDiagram = () => {
