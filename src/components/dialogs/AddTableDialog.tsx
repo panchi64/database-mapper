@@ -59,10 +59,10 @@ export function AddTableDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm}>Add Table</Button>
+          <Button variant="outline" onClick={handleConfirm}>Add Table</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
