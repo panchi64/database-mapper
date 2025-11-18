@@ -53,5 +53,20 @@ export function useFileOperations() {
     input.click();
   };
 
-  return { saveDiagram, loadDiagram };
+  const handleFileDrop = (file: File) => {
+    if (file.type === 'application/json' || file.name.endsWith('.json')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target?.result as string) as DiagramState;
+          importDiagram(data);
+        } catch {
+          alert('Invalid diagram file');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  return { saveDiagram, loadDiagram, handleFileDrop };
 }
