@@ -1,8 +1,7 @@
 import { memo } from 'react';
 import { NodeResizer } from '@xyflow/react';
-import { ChevronDown, ChevronRight, Folder } from 'lucide-react';
+import { Folder } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useStore } from '@/store';
 import type { GroupNodeData } from '@/types';
 
 interface GroupNodeProps {
@@ -51,11 +50,9 @@ const colorMap: Record<string, { bg: string; border: string; header: string; tex
   },
 };
 
-export const GroupNode = memo(({ data, selected, id }: GroupNodeProps) => {
+export const GroupNode = memo(({ data, selected }: GroupNodeProps) => {
   const color = data.color || 'slate';
   const colorClasses = colorMap[color] || colorMap.slate;
-  const isCollapsed = data.collapsed ?? false;
-  const toggleGroupCollapse = useStore((state) => state.toggleGroupCollapse);
 
   return (
     <>
@@ -80,43 +77,20 @@ export const GroupNode = memo(({ data, selected, id }: GroupNodeProps) => {
         {/* Header */}
         <div
           className={cn(
-            'flex items-center gap-2 px-3 py-2 rounded-t-md cursor-pointer',
+            'flex items-center gap-2 px-3 py-2 rounded-t-md',
             colorClasses.header
           )}
         >
-          {/* Collapse toggle */}
-          <button
-            className={cn(
-              'p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors',
-              colorClasses.text
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleGroupCollapse(id);
-            }}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
-          </button>
-
-          {/* Folder icon */}
           <Folder className={cn('w-4 h-4', colorClasses.text)} />
-
-          {/* Group name */}
           <span className={cn('font-semibold text-sm', colorClasses.text)}>
             {data.name}
           </span>
         </div>
 
-        {/* Content area - other nodes can be placed inside */}
-        {!isCollapsed && (
-          <div className="p-2 min-h-[60px]">
-            {/* This area is intentionally empty - child nodes are rendered by React Flow */}
-          </div>
-        )}
+        {/* Content area */}
+        <div className="p-2 min-h-[60px]">
+          {/* This area is intentionally empty - child nodes are rendered by React Flow */}
+        </div>
       </div>
     </>
   );

@@ -47,7 +47,6 @@ export interface GroupNodeData {
   type: 'group';
   name: string;
   color?: string;
-  collapsed?: boolean;
   [key: string]: unknown;
 }
 

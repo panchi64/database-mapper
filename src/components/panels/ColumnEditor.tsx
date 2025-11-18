@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, ChevronDown, ChevronRight, Key, Link, Fingerprint } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronRight, Key, Link, Fingerprint, KeyRound, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -175,91 +175,103 @@ export function ColumnEditor({ column, onUpdate, onDelete, defaultExpanded = fal
       </div>
 
       {/* Boolean Properties with improved layout */}
-      <div className="space-y-2">
-        <div className="text-xs font-medium text-muted-foreground">Constraints</div>
-        <div className="space-y-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor={`col-pk-${column.id}`} className="text-xs">
-                    Primary Key
-                  </Label>
-                  <Switch
-                    id={`col-pk-${column.id}`}
-                    checked={column.primaryKey}
-                    onCheckedChange={(checked) => onUpdate({ primaryKey: checked })}
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Uniquely identifies each row in the table</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+      <div className="space-y-3">
+        {/* Constraints Group */}
+        <div className="rounded-md bg-muted/40 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-medium">
+            <KeyRound className="h-3 w-3" />
+            Constraints
+          </div>
+          <div className="space-y-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={`col-pk-${column.id}`} className="text-xs">
+                      Primary Key
+                    </Label>
+                    <Switch
+                      id={`col-pk-${column.id}`}
+                      checked={column.primaryKey}
+                      onCheckedChange={(checked) => onUpdate({ primaryKey: checked })}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Uniquely identifies each row in the table</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor={`col-unique-${column.id}`} className="text-xs">
-                    Unique
-                  </Label>
-                  <Switch
-                    id={`col-unique-${column.id}`}
-                    checked={column.unique}
-                    onCheckedChange={(checked) => onUpdate({ unique: checked })}
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>All values in this column must be distinct</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={`col-unique-${column.id}`} className="text-xs">
+                      Unique
+                    </Label>
+                    <Switch
+                      id={`col-unique-${column.id}`}
+                      checked={column.unique}
+                      onCheckedChange={(checked) => onUpdate({ unique: checked })}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>All values in this column must be distinct</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
 
-        <div className="text-xs font-medium text-muted-foreground pt-2">Behavior</div>
-        <div className="space-y-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor={`col-nullable-${column.id}`} className="text-xs">
-                    Nullable
-                  </Label>
-                  <Switch
-                    id={`col-nullable-${column.id}`}
-                    checked={column.nullable}
-                    onCheckedChange={(checked) => onUpdate({ nullable: checked })}
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Column can contain NULL values</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        {/* Behavior Group */}
+        <div className="rounded-md bg-muted/40 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-medium">
+            <Settings2 className="h-3 w-3" />
+            Behavior
+          </div>
+          <div className="space-y-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={`col-nullable-${column.id}`} className="text-xs">
+                      Nullable
+                    </Label>
+                    <Switch
+                      id={`col-nullable-${column.id}`}
+                      checked={column.nullable}
+                      onCheckedChange={(checked) => onUpdate({ nullable: checked })}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Column can contain NULL values</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor={`col-auto-${column.id}`} className="text-xs">
-                    Auto Inc.
-                  </Label>
-                  <Switch
-                    id={`col-auto-${column.id}`}
-                    checked={column.autoIncrement}
-                    onCheckedChange={(checked) => onUpdate({ autoIncrement: checked })}
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Automatically increment value for new rows</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={`col-auto-${column.id}`} className="text-xs">
+                      Auto Inc.
+                    </Label>
+                    <Switch
+                      id={`col-auto-${column.id}`}
+                      checked={column.autoIncrement}
+                      onCheckedChange={(checked) => onUpdate({ autoIncrement: checked })}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Automatically increment value for new rows</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </div>
     </div>

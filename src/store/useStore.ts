@@ -60,7 +60,6 @@ interface StoreState {
   // Actions - Group management
   updateGroupName: (nodeId: string, name: string) => void;
   updateGroupColor: (nodeId: string, color: string) => void;
-  toggleGroupCollapse: (nodeId: string) => void;
 
   // Actions - Note management
   updateNoteContent: (nodeId: string, content: string) => void;
@@ -145,6 +144,7 @@ export const useStore = create<StoreState>()(
           id,
           type: 'table',
           position,
+          zIndex: 1,  // Above groups
           data: {
             type: 'table',
             name: 'New Table',
@@ -173,11 +173,11 @@ export const useStore = create<StoreState>()(
           id,
           type: 'group',
           position,
+          zIndex: 0,  // Behind other nodes
           style: { width: 400, height: 300 },
           data: {
             type: 'group',
             name: 'New Group',
-            collapsed: false,
           },
         };
 
@@ -192,6 +192,7 @@ export const useStore = create<StoreState>()(
           id,
           type: 'note',
           position,
+          zIndex: 1,  // Above groups
           data: {
             type: 'note',
             content: 'New note...',
@@ -344,17 +345,6 @@ export const useStore = create<StoreState>()(
           nodes: get().nodes.map((node) =>
             node.id === nodeId && node.data.type === 'group'
               ? { ...node, data: { ...node.data, color } }
-              : node
-          ) as DBNode[],
-        });
-      },
-
-      toggleGroupCollapse: (nodeId) => {
-        get().saveToHistory();
-        set({
-          nodes: get().nodes.map((node) =>
-            node.id === nodeId && node.data.type === 'group'
-              ? { ...node, data: { ...node.data, collapsed: !node.data.collapsed } }
               : node
           ) as DBNode[],
         });
