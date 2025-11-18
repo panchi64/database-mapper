@@ -14,37 +14,37 @@ interface GroupNodeProps {
 // Color mapping for group backgrounds (semi-transparent)
 const colorMap: Record<string, { bg: string; border: string; header: string; text: string }> = {
   slate: {
-    bg: 'bg-slate-50/50 dark:bg-slate-800/30 backdrop-blur-sm',
+    bg: 'bg-slate-50/80 dark:bg-slate-800/50',
     border: 'border-slate-300 dark:border-slate-600',
     header: 'bg-slate-100 dark:bg-slate-800',
     text: 'text-slate-700 dark:text-slate-300',
   },
   blue: {
-    bg: 'bg-blue-50/50 dark:bg-blue-900/20 backdrop-blur-sm',
+    bg: 'bg-blue-50/80 dark:bg-blue-900/40',
     border: 'border-blue-300 dark:border-blue-700',
     header: 'bg-blue-100 dark:bg-blue-900/50',
     text: 'text-blue-700 dark:text-blue-300',
   },
   green: {
-    bg: 'bg-green-50/50 dark:bg-green-900/20 backdrop-blur-sm',
+    bg: 'bg-green-50/80 dark:bg-green-900/40',
     border: 'border-green-300 dark:border-green-700',
     header: 'bg-green-100 dark:bg-green-900/50',
     text: 'text-green-700 dark:text-green-300',
   },
   purple: {
-    bg: 'bg-purple-50/50 dark:bg-purple-900/20 backdrop-blur-sm',
+    bg: 'bg-purple-50/80 dark:bg-purple-900/40',
     border: 'border-purple-300 dark:border-purple-700',
     header: 'bg-purple-100 dark:bg-purple-900/50',
     text: 'text-purple-700 dark:text-purple-300',
   },
   orange: {
-    bg: 'bg-orange-50/50 dark:bg-orange-900/20 backdrop-blur-sm',
+    bg: 'bg-orange-50/80 dark:bg-orange-900/40',
     border: 'border-orange-300 dark:border-orange-700',
     header: 'bg-orange-100 dark:bg-orange-900/50',
     text: 'text-orange-700 dark:text-orange-300',
   },
   red: {
-    bg: 'bg-red-50/50 dark:bg-red-900/20 backdrop-blur-sm',
+    bg: 'bg-red-50/80 dark:bg-red-900/40',
     border: 'border-red-300 dark:border-red-700',
     header: 'bg-red-100 dark:bg-red-900/50',
     text: 'text-red-700 dark:text-red-300',
