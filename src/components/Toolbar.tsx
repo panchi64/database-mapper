@@ -7,10 +7,10 @@ import {
   Undo,
   Redo,
   Save,
-  FolderInput,
   Sun,
   Moon,
   Trash2,
+  Group,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -99,119 +99,139 @@ export function Toolbar() {
   return (
     <TooltipProvider>
       <div className="flex items-center gap-1 p-2 border-b bg-background">
-        {/* Left side - File & Edit Operations */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="toolbar" size="icon" onClick={saveDiagram}>
-              <Save className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Save Diagram</p>
-          </TooltipContent>
-        </Tooltip>
+        {/* File Section */}
+        <div className="flex items-center gap-1">
+          <span className="hidden lg:block text-[10px] text-muted-foreground uppercase tracking-wider px-1 mr-1">File</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="toolbar" size="toolbarIcon" onClick={saveDiagram}>
+                <Save className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Save</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Save Diagram</p>
+            </TooltipContent>
+          </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="toolbar" size="icon" onClick={loadDiagram}>
-              <FolderInput className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Load Diagram</p>
-          </TooltipContent>
-        </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="toolbar" size="toolbarIcon" onClick={loadDiagram}>
+                <FolderOpen className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Load</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Load Diagram</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         <Separator orientation="vertical" className="h-6" />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="toolbar"
-              size="icon"
-              onClick={undo}
-              disabled={!canUndo}
-            >
-              <Undo className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Undo (Ctrl+Z)</p>
-          </TooltipContent>
-        </Tooltip>
+        {/* Edit Section */}
+        <div className="flex items-center gap-1">
+          <span className="hidden lg:block text-[10px] text-muted-foreground uppercase tracking-wider px-1 mr-1">Edit</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="toolbar"
+                size="toolbarIcon"
+                onClick={undo}
+                disabled={!canUndo}
+              >
+                <Undo className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Undo</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Undo (Ctrl+Z)</p>
+            </TooltipContent>
+          </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="toolbar"
-              size="icon"
-              onClick={redo}
-              disabled={!canRedo}
-            >
-              <Redo className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Redo (Ctrl+Shift+Z)</p>
-          </TooltipContent>
-        </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="toolbar"
+                size="toolbarIcon"
+                onClick={redo}
+                disabled={!canRedo}
+              >
+                <Redo className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Redo</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Redo (Ctrl+Shift+Z)</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         {/* Flex spacer to center creation actions */}
         <div className="flex-1" />
 
-        {/* Center - Creation Actions */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="toolbar" size="icon" onClick={handleAddTable}>
-              <Table className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Add Table</p>
-          </TooltipContent>
-        </Tooltip>
+        {/* Create Section */}
+        <div className="flex items-center gap-1">
+          <span className="hidden lg:block text-[10px] text-muted-foreground uppercase tracking-wider px-1 mr-1">Create</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="toolbar" size="toolbarIcon" onClick={handleAddTable}>
+                <Table className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Table</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Add Table</p>
+            </TooltipContent>
+          </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="toolbar" size="icon" onClick={handleAddNote}>
-              <StickyNote className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Add Note</p>
-          </TooltipContent>
-        </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="toolbar" size="toolbarIcon" onClick={handleAddNote}>
+                <StickyNote className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Note</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Add Note</p>
+            </TooltipContent>
+          </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="toolbar" size="icon" onClick={handleAddGroup}>
-              <FolderOpen className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Add Group</p>
-          </TooltipContent>
-        </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="toolbar" size="toolbarIcon" onClick={handleAddGroup}>
+                <Group className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Group</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Add Group</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         {/* Flex spacer to push remaining items to right */}
         <div className="flex-1" />
 
-        {/* Right side - Destructive, Help & Settings */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="toolbar"
-              size="icon"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => setShowClearConfirm(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Clear Diagram</p>
-          </TooltipContent>
-        </Tooltip>
+        {/* Actions Section */}
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="toolbar"
+                size="toolbarIcon"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => setShowClearConfirm(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Clear</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Clear Diagram</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         <Separator orientation="vertical" className="h-6" />
 
@@ -221,12 +241,13 @@ export function Toolbar() {
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="toolbar" size="icon" onClick={handleThemeToggle}>
+            <Button variant="toolbar" size="toolbarIcon" onClick={handleThemeToggle}>
               {isDark ? (
                 <Moon className="h-4 w-4" />
               ) : (
                 <Sun className="h-4 w-4" />
               )}
+              <span className="hidden lg:inline-block ml-2">Theme</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
