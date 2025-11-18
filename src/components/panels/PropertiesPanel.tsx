@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useStore } from '@/store';
+import { useShallow } from 'zustand/react/shallow';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,15 +33,18 @@ export function PropertiesPanel() {
   const hasNodes = useStore((state) => state.nodes.length > 0);
 
   // Derived selector for source/target nodes when an edge is selected
-  const sourceTargetNodes = useStore((state) => {
-    if (!state.selectedEdgeId) return null;
-    const edge = state.edges.find((e) => e.id === state.selectedEdgeId);
-    if (!edge) return null;
-    return {
-      sourceNode: state.nodes.find((n) => n.id === edge.source),
-      targetNode: state.nodes.find((n) => n.id === edge.target),
-    };
-  });
+  // Use useShallow to prevent infinite re-renders from new object references
+  const sourceTargetNodes = useStore(
+    useShallow((state) => {
+      if (!state.selectedEdgeId) return null;
+      const edge = state.edges.find((e) => e.id === state.selectedEdgeId);
+      if (!edge) return null;
+      return {
+        sourceNode: state.nodes.find((n) => n.id === edge.source),
+        targetNode: state.nodes.find((n) => n.id === edge.target),
+      };
+    })
+  );
 
   // Table actions
   const updateTableName = useStore((state) => state.updateTableName);
