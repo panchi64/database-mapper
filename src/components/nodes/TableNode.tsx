@@ -91,8 +91,7 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
         {/* Column name */}
         <span
           className={cn(
-            'font-medium truncate',
-            column.primaryKey && 'text-yellow-700 dark:text-yellow-300'
+            'font-medium truncate text-white'
           )}
         >
           {column.name}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useReactFlow } from '@xyflow/react';
 import {
   Table,
   StickyNote,
@@ -29,6 +30,21 @@ export function Toolbar() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showAddTableDialog, setShowAddTableDialog] = useState(false);
 
+  const { getViewport } = useReactFlow();
+
+  const getViewportCenter = () => {
+    const viewport = getViewport();
+
+    // Get the actual React Flow canvas dimensions
+    const reactFlowContainer = document.querySelector('.react-flow') as HTMLElement;
+    const canvasWidth = reactFlowContainer?.offsetWidth ?? window.innerWidth;
+    const canvasHeight = reactFlowContainer?.offsetHeight ?? window.innerHeight;
+
+    const centerX = (-viewport.x + canvasWidth / 2) / viewport.zoom;
+    const centerY = (-viewport.y + canvasHeight / 2) / viewport.zoom;
+    return { x: centerX, y: centerY };
+  };
+
   const theme = useStore((state) => state.theme);
   const setTheme = useStore((state) => state.setTheme);
   const addTable = useStore((state) => state.addTable);
@@ -47,8 +63,7 @@ export function Toolbar() {
   };
 
   const handleAddTableConfirm = (name: string) => {
-    // Add table at center of viewport (default position)
-    const id = addTable({ x: 100, y: 100 });
+    const id = addTable(getViewportCenter());
     if (name && name !== 'New Table') {
       useStore.getState().updateTableName(id, name);
     }
@@ -56,11 +71,11 @@ export function Toolbar() {
   };
 
   const handleAddNote = () => {
-    addNote({ x: 150, y: 150 });
+    addNote(getViewportCenter());
   };
 
   const handleAddGroup = () => {
-    addGroup({ x: 50, y: 50 });
+    addGroup(getViewportCenter());
   };
 
   const handleThemeToggle = () => {
