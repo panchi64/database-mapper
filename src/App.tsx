@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -9,6 +9,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { useStore } from '@/store';
+import { useShallow } from 'zustand/react/shallow';
 import { nodeTypes } from '@/components/nodes';
 import { edgeTypes } from '@/components/edges';
 import { Toolbar } from '@/components/Toolbar';
@@ -28,7 +29,21 @@ function Flow() {
     deleteSelected,
     undo,
     redo,
-  } = useStore();
+  } = useStore(
+    useShallow((state) => ({
+      nodes: state.nodes,
+      edges: state.edges,
+      onNodesChange: state.onNodesChange,
+      onEdgesChange: state.onEdgesChange,
+      onConnect: state.onConnect,
+      setSelectedNode: state.setSelectedNode,
+      setSelectedEdge: state.setSelectedEdge,
+      clearSelection: state.clearSelection,
+      deleteSelected: state.deleteSelected,
+      undo: state.undo,
+      redo: state.redo,
+    }))
+  );
 
   // Handle node selection
   const onNodeClick = useCallback((_: React.MouseEvent, node: any) => {
@@ -72,6 +87,14 @@ function Flow() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [deleteSelected, undo, redo]);
 
+  // Memoize static options to prevent unnecessary re-renders
+  const defaultEdgeOptions = useMemo(() => ({
+    type: 'relationship',
+    data: { type: 'relationship', cardinality: 'one-to-many' },
+  }), []);
+
+  const snapGrid = useMemo(() => [15, 15] as [number, number], []);
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -84,13 +107,10 @@ function Flow() {
       onPaneClick={onPaneClick}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
-      defaultEdgeOptions={{
-        type: 'relationship',
-        data: { type: 'relationship', cardinality: 'one-to-many' },
-      }}
+      defaultEdgeOptions={defaultEdgeOptions}
       fitView
       snapToGrid
-      snapGrid={[15, 15]}
+      snapGrid={snapGrid}
       className="bg-background"
     >
       <Background gap={15} size={1} />

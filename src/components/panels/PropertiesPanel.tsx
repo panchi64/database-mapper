@@ -18,10 +18,29 @@ import { ColumnEditor } from './ColumnEditor';
 import { Cardinality, TableNodeData, GroupNodeData, NoteNodeData } from '@/types';
 
 export function PropertiesPanel() {
-  const nodes = useStore((state) => state.nodes);
-  const edges = useStore((state) => state.edges);
-  const selectedNodeId = useStore((state) => state.selectedNodeId);
-  const selectedEdgeId = useStore((state) => state.selectedEdgeId);
+  // Use derived selectors to avoid re-renders when unrelated nodes/edges change
+  const selectedNode = useStore((state) =>
+    state.selectedNodeId
+      ? state.nodes.find((n) => n.id === state.selectedNodeId) ?? null
+      : null
+  );
+  const selectedEdge = useStore((state) =>
+    state.selectedEdgeId
+      ? state.edges.find((e) => e.id === state.selectedEdgeId) ?? null
+      : null
+  );
+  const hasNodes = useStore((state) => state.nodes.length > 0);
+
+  // Derived selector for source/target nodes when an edge is selected
+  const sourceTargetNodes = useStore((state) => {
+    if (!state.selectedEdgeId) return null;
+    const edge = state.edges.find((e) => e.id === state.selectedEdgeId);
+    if (!edge) return null;
+    return {
+      sourceNode: state.nodes.find((n) => n.id === edge.source),
+      targetNode: state.nodes.find((n) => n.id === edge.target),
+    };
+  });
 
   // Table actions
   const updateTableName = useStore((state) => state.updateTableName);
@@ -44,18 +63,10 @@ export function PropertiesPanel() {
   const updateEdgeLabel = useStore((state) => state.updateEdgeLabel);
   const updateEdgeColumns = useStore((state) => state.updateEdgeColumns);
 
-  // Find selected node or edge
-  const selectedNode = selectedNodeId
-    ? nodes.find((n) => n.id === selectedNodeId)
-    : null;
-  const selectedEdge = selectedEdgeId
-    ? edges.find((e) => e.id === selectedEdgeId)
-    : null;
-
   // If nothing is selected
   if (!selectedNode && !selectedEdge) {
     // Check if diagram is empty (no nodes)
-    if (nodes.length === 0) {
+    if (!hasNodes) {
       return (
         <div className="w-80 border-l bg-background">
           <div className="p-4 space-y-4">
@@ -103,8 +114,8 @@ export function PropertiesPanel() {
 
   // Render edge properties
   if (selectedEdge) {
-    const sourceNode = nodes.find((n) => n.id === selectedEdge.source);
-    const targetNode = nodes.find((n) => n.id === selectedEdge.target);
+    const sourceNode = sourceTargetNodes?.sourceNode;
+    const targetNode = sourceTargetNodes?.targetNode;
 
     const sourceColumns =
       sourceNode?.data.type === 'table' ? sourceNode.data.columns : [];

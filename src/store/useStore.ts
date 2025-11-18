@@ -463,8 +463,8 @@ export const useStore = create<StoreState>()(
       saveToHistory: () => {
         const { nodes, edges, history, historyIndex } = get();
         const newEntry: HistoryEntry = {
-          nodes: JSON.parse(JSON.stringify(nodes)),
-          edges: JSON.parse(JSON.stringify(edges)),
+          nodes: structuredClone(nodes),
+          edges: structuredClone(edges),
         };
 
         // Remove any future history if we're not at the end
@@ -487,8 +487,8 @@ export const useStore = create<StoreState>()(
         if (historyIndex > 0) {
           const prevState = history[historyIndex - 1];
           set({
-            nodes: JSON.parse(JSON.stringify(prevState.nodes)),
-            edges: JSON.parse(JSON.stringify(prevState.edges)),
+            nodes: structuredClone(prevState.nodes),
+            edges: structuredClone(prevState.edges),
             historyIndex: historyIndex - 1,
           });
         }
@@ -499,8 +499,8 @@ export const useStore = create<StoreState>()(
         if (historyIndex < history.length - 1) {
           const nextState = history[historyIndex + 1];
           set({
-            nodes: JSON.parse(JSON.stringify(nextState.nodes)),
-            edges: JSON.parse(JSON.stringify(nextState.edges)),
+            nodes: structuredClone(nextState.nodes),
+            edges: structuredClone(nextState.edges),
             historyIndex: historyIndex + 1,
           });
         }
