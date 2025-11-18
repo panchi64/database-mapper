@@ -54,11 +54,49 @@ export function PropertiesPanel() {
 
   // If nothing is selected
   if (!selectedNode && !selectedEdge) {
+    // Check if diagram is empty (no nodes)
+    if (nodes.length === 0) {
+      return (
+        <div className="w-80 border-l bg-background">
+          <div className="p-4 space-y-4">
+            <div className="text-center space-y-2">
+              <h3 className="font-medium">Get Started</h3>
+              <p className="text-sm text-muted-foreground">Create your first database diagram</p>
+            </div>
+            <div className="space-y-3 text-sm">
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">1</span>
+                <div>
+                  <p className="font-medium">Add a table</p>
+                  <p className="text-muted-foreground">Click the table icon in the toolbar</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">2</span>
+                <div>
+                  <p className="font-medium">Add columns</p>
+                  <p className="text-muted-foreground">Select a table and add columns in this panel</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">3</span>
+                <div>
+                  <p className="font-medium">Connect tables</p>
+                  <p className="text-muted-foreground">Drag from one table's handle to another</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Nodes exist but nothing selected
     return (
-      <div className="w-80 border-l bg-background p-4">
-        <p className="text-sm text-muted-foreground">
-          Select a node or edge to edit its properties
-        </p>
+      <div className="w-80 border-l bg-background">
+        <div className="p-4 text-center">
+          <p className="text-sm text-muted-foreground">Select a table, note, or relationship to edit its properties</p>
+        </div>
       </div>
     );
   }
@@ -73,6 +111,10 @@ export function PropertiesPanel() {
     const targetColumns =
       targetNode?.data.type === 'table' ? targetNode.data.columns : [];
 
+    // Get source and target table names for header
+    const sourceName = sourceNode?.data?.type === 'table' ? sourceNode.data.name : 'Unknown';
+    const targetName = targetNode?.data?.type === 'table' ? targetNode.data.name : 'Unknown';
+
     return (
       <div className="w-80 border-l bg-background">
         <ScrollArea className="h-full">
@@ -80,7 +122,7 @@ export function PropertiesPanel() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium">
-                  Relationship
+                  {sourceName} → {targetName}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -120,7 +162,7 @@ export function PropertiesPanel() {
                 {/* Source Column */}
                 {sourceColumns.length > 0 && (
                   <div className="space-y-2">
-                    <Label htmlFor="edge-source-col">Source Column</Label>
+                    <Label htmlFor="edge-source-col">Source Column ({sourceName})</Label>
                     <Select
                       value={selectedEdge.data?.sourceColumn || ''}
                       onValueChange={(value) =>
@@ -148,7 +190,7 @@ export function PropertiesPanel() {
                 {/* Target Column */}
                 {targetColumns.length > 0 && (
                   <div className="space-y-2">
-                    <Label htmlFor="edge-target-col">Target Column</Label>
+                    <Label htmlFor="edge-target-col">Target Column ({targetName})</Label>
                     <Select
                       value={selectedEdge.data?.targetColumn || ''}
                       onValueChange={(value) =>
@@ -193,7 +235,7 @@ export function PropertiesPanel() {
           <div className="p-4 space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Table</CardTitle>
+                <CardTitle className="text-sm font-medium">Table: {tableData.name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Table Name */}
@@ -205,6 +247,7 @@ export function PropertiesPanel() {
                     onChange={(e) =>
                       updateTableName(selectedNode!.id, e.target.value)
                     }
+                    placeholder="e.g., users, orders"
                   />
                 </div>
 
@@ -229,7 +272,7 @@ export function PropertiesPanel() {
                     onChange={(e) =>
                       updateTableComment(selectedNode!.id, e.target.value)
                     }
-                    placeholder="Add a comment..."
+                    placeholder="Add notes about this table..."
                   />
                 </div>
               </CardContent>
@@ -288,7 +331,7 @@ export function PropertiesPanel() {
           <div className="p-4 space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Group</CardTitle>
+                <CardTitle className="text-sm font-medium">Group: {groupData.name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Group Name */}
@@ -344,7 +387,7 @@ export function PropertiesPanel() {
                     onChange={(e) =>
                       updateNoteContent(selectedNode!.id, e.target.value)
                     }
-                    placeholder="Enter note..."
+                    placeholder="Write your notes here..."
                   />
                 </div>
 

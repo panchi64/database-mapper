@@ -6,7 +6,7 @@ import {
   Undo,
   Redo,
   Save,
-  Upload,
+  FolderInput,
   Sun,
   Moon,
   Trash2,
@@ -23,6 +23,7 @@ import { useStore } from '@/store';
 import { useFileOperations } from '@/hooks/useFileOperations';
 import { ConfirmDialog } from '@/components/dialogs/ConfirmDialog';
 import { AddTableDialog } from '@/components/dialogs/AddTableDialog';
+import { KeyboardShortcutsDialog } from '@/components/dialogs';
 
 export function Toolbar() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -83,81 +84,10 @@ export function Toolbar() {
   return (
     <TooltipProvider>
       <div className="flex items-center gap-1 p-2 border-b bg-background">
-        {/* Add nodes */}
+        {/* Left side - File & Edit Operations */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={handleAddTable}>
-              <Table className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Add Table</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={handleAddNote}>
-              <StickyNote className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Add Note</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={handleAddGroup}>
-              <FolderOpen className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Add Group</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Separator orientation="vertical" className="mx-2 h-6" />
-
-        {/* Undo/Redo */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={undo}
-              disabled={!canUndo}
-            >
-              <Undo className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Undo</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={redo}
-              disabled={!canRedo}
-            >
-              <Redo className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Redo</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Separator orientation="vertical" className="mx-2 h-6" />
-
-        {/* Save/Load */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={saveDiagram}>
+            <Button variant="toolbar" size="icon" onClick={saveDiagram}>
               <Save className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -168,8 +98,8 @@ export function Toolbar() {
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={loadDiagram}>
-              <Upload className="h-4 w-4" />
+            <Button variant="toolbar" size="icon" onClick={loadDiagram}>
+              <FolderInput className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -177,12 +107,106 @@ export function Toolbar() {
           </TooltipContent>
         </Tooltip>
 
-        <Separator orientation="vertical" className="mx-2 h-6" />
+        <Separator orientation="vertical" className="h-6" />
 
-        {/* Theme toggle */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={handleThemeToggle}>
+            <Button
+              variant="toolbar"
+              size="icon"
+              onClick={undo}
+              disabled={!canUndo}
+            >
+              <Undo className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Undo (Ctrl+Z)</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="toolbar"
+              size="icon"
+              onClick={redo}
+              disabled={!canRedo}
+            >
+              <Redo className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Redo (Ctrl+Shift+Z)</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Flex spacer to center creation actions */}
+        <div className="flex-1" />
+
+        {/* Center - Creation Actions */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="toolbar" size="icon" onClick={handleAddTable}>
+              <Table className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Add Table</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="toolbar" size="icon" onClick={handleAddNote}>
+              <StickyNote className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Add Note</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="toolbar" size="icon" onClick={handleAddGroup}>
+              <FolderOpen className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Add Group</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Flex spacer to push remaining items to right */}
+        <div className="flex-1" />
+
+        {/* Right side - Destructive, Help & Settings */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="toolbar"
+              size="icon"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => setShowClearConfirm(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Clear Diagram</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Separator orientation="vertical" className="h-6" />
+
+        <KeyboardShortcutsDialog />
+
+        <Separator orientation="vertical" className="h-6" />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="toolbar" size="icon" onClick={handleThemeToggle}>
               {isDark ? (
                 <Moon className="h-4 w-4" />
               ) : (
@@ -191,23 +215,7 @@ export function Toolbar() {
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Toggle Theme ({theme})</p>
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Clear diagram */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowClearConfirm(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Clear Diagram</p>
+            <p>{theme === 'dark' ? 'Switch to System' : theme === 'light' ? 'Switch to Dark' : 'Switch to Light'}</p>
           </TooltipContent>
         </Tooltip>
 
