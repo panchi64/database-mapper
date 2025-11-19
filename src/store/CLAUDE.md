@@ -12,87 +12,119 @@ This directory contains the Zustand store that manages all application state wit
 
 ```typescript
 {
-  // Diagram data
+  // Diagram data (persisted)
   nodes: DBNode[]
   edges: DBEdge[]
+  theme: 'light' | 'dark' | 'system'
 
-  // Selection
-  selectedId: string | null
+  // Selection (not persisted)
+  selectedNodeId: string | null
+  selectedEdgeId: string | null
 
-  // History (undo/redo)
+  // History (not persisted)
   history: HistoryEntry[]
   historyIndex: number
-
-  // Theme
-  theme: 'light' | 'dark' | 'system'
 }
 ```
 
 ### Persistence
 
-Store automatically persists to localStorage with key `db-mapper-storage`. Uses Zustand's `persist` middleware with partialize to exclude `selectedId` from storage.
+Store persists to localStorage with key `db-mapper-storage`. Uses Zustand's `persist` middleware with `partialize`:
+
+```typescript
+partialize: (state) => ({
+  nodes: state.nodes,
+  edges: state.edges,
+  theme: state.theme,
+})
+```
+
+Selection and history reset on page reload - only diagram data survives.
 
 ### Action Categories
 
+**React Flow Integration**:
+- `onNodesChange(changes)`: Apply React Flow position/visibility changes
+- `onEdgesChange(changes)`: Apply React Flow edge changes
+- `onConnect(connection)`: Create edge when user connects nodes (auto-generates UUID)
+
 **Node Management**:
-- `addNode(node)`: Add new node with history snapshot
-- `updateNode(id, data)`: Update node properties
-- `deleteNode(id)`: Remove node and connected edges
-- `setNodes(nodes)`: Replace all nodes (batch operation)
+- `addTable(position)`, `addGroup(position)`, `addNote(position)`: Create nodes, return ID
+- `updateTableName(id, name)`, `updateTableColor(id, color)`, `updateTableComment(id, comment)`
+- `updateGroupName(id, name)`, `updateGroupColor(id, color)`
+- `updateNoteContent(id, content)`, `updateNoteName(id, name)`, `updateNoteColor(id, color)`
+- `deleteNode(id)`: Remove node AND cascade-delete connected edges
+
+**Column Management**:
+- `addColumn(nodeId)`: Add column with default VARCHAR(255)
+- `updateColumn(nodeId, columnId, data)`: Partial update column properties
+- `deleteColumn(nodeId, columnId)`: Remove column
+- `reorderColumns(nodeId, columnIds)`: Reorder via ID array
 
 **Edge Management**:
-- `addEdge(edge)`: Add new relationship
-- `updateEdge(id, data)`: Update edge properties
 - `updateEdgeCardinality(id, cardinality)`: Change relationship type
-- `deleteEdge(id)`: Remove edge
-- `setEdges(edges)`: Replace all edges
+- `updateEdgeLabel(id, label)`: Set edge display label
+- `updateEdgeColumns(id, sourceColumn, targetColumn)`: Map columns AND update handles
 
-**Column Management** (for TableNodes):
-- `addColumn(nodeId)`: Add new column to table
-- `updateColumn(nodeId, columnId, data)`: Update column properties
-- `deleteColumn(nodeId, columnId)`: Remove column
-- `reorderColumns(nodeId, columnIds)`: Change column order
-
-**Group Management** (for GroupNodes):
-- `updateGroupName(nodeId, name)`: Rename group
-- `updateGroupColor(nodeId, color)`: Change group color
-- `toggleGroupCollapse(nodeId)`: Expand/collapse group
-
-**Note Management** (for NoteNodes):
-- `updateNoteContent(nodeId, content)`: Update note text
-- `updateNoteColor(nodeId, color)`: Change note color
-
-**Selection**:
-- `selectNode(id)` / `selectEdge(id)`: Set selected element
+**Selection** (mutually exclusive):
+- `setSelectedNode(id)`: Select node, clear edge selection
+- `setSelectedEdge(id)`: Select edge, clear node selection
 - `clearSelection()`: Deselect all
 
 **History**:
-- `undo()` / `redo()`: Navigate history
-- History limited to 50 entries for memory management
-- Deep copy via JSON stringify/parse for immutability
+- `saveToHistory()`: Snapshot current state before mutation
+- `undo()` / `redo()`: Navigate history with bounds checking
+- `canUndo()` / `canRedo()`: Query methods for UI state
+- Limited to 50 entries (MAX_HISTORY constant)
 
 **File Operations**:
-- `exportDiagram()`: Get serializable diagram state
-- `importDiagram(data)`: Load diagram from JSON
+- `exportDiagram()`: Return `{ nodes, edges }` for JSON export
+- `importDiagram(data)`: Load diagram, save to history
+- `clearDiagram()`: Reset to empty state
+
+**Clipboard**:
+- `copySelectedNodes()`: Copy nodes with `node.selected` flag to navigator.clipboard
+- `pasteNodes(position)`: Paste with ID regeneration at specified position
 
 ### Usage Patterns
 
-**Access state with selectors** (prevents unnecessary re-renders):
+**Selector pattern** (minimizes re-renders):
 ```typescript
 const nodes = useStore((state) => state.nodes);
-const selectedId = useStore((state) => state.selectedId);
+const selectedNode = useStore((state) =>
+  state.nodes.find(n => n.id === state.selectedNodeId)
+);
 ```
 
-**Multiple selectors in one component**:
+**Multiple related properties** (use useShallow):
 ```typescript
-const { nodes, edges, addNode, deleteNode } = useStore();
+const { nodes, edges } = useStore(useShallow((state) => ({
+  nodes: state.nodes,
+  edges: state.edges
+})));
 ```
 
-**History snapshots**: Most mutating actions call internal `pushHistory()` before modification to enable undo.
+**Action access**:
+```typescript
+const updateTableName = useStore((state) => state.updateTableName);
+```
+
+**History pattern**: Most actions save history BEFORE mutation:
+```typescript
+updateTableName: (nodeId, name) => {
+  get().saveToHistory();  // Snapshot before change
+  set({ /* update nodes */ });
+}
+```
 
 ### Important Implementation Details
 
-- All ID generation uses `uuid` library
-- History uses deep copy (JSON parse/stringify) - be aware of performance with large diagrams
-- Edge deletion cascades when deleting nodes (removes connected edges)
-- Column foreign keys reference by `tableId` and `columnId`
+- **ID generation**: Uses `uuid` library for all IDs
+- **Deep copy**: History uses `structuredClone()` (better than JSON for circular refs)
+- **Cascade deletion**: `deleteNode` also removes connected edges
+- **Handle updates**: `updateEdgeColumns` also updates `sourceHandle`/`targetHandle`:
+  ```typescript
+  sourceHandle: sourceColumn ? `${sourceColumn}-right` : edge.sourceHandle
+  ```
+- **Clipboard validation**: Uses `ClipboardData` type with `type: 'db-mapper-nodes'` marker
+- **Paste behavior**: Regenerates all IDs, clears foreignKey references, adds "(copy)" suffix
