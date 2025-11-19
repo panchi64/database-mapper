@@ -13,6 +13,29 @@ import { useStore } from '@/store';
 import { useShallow } from 'zustand/react/shallow';
 import { nodeTypes } from '@/components/nodes';
 import { edgeTypes } from '@/components/edges';
+import { PRESET_COLORS, DBNode } from '@/types';
+
+// MiniMap node color based on the node's actual color
+const getMiniMapNodeColor = (node: DBNode): string => {
+  const colorName = node.data.color ||
+    (node.data.type === 'note' ? 'yellow' : 'slate');
+  const preset = PRESET_COLORS.find(c => c.name === colorName);
+  return preset?.value || '#64748b';
+};
+
+// MiniMap stroke color for type differentiation
+const getMiniMapNodeStrokeColor = (node: DBNode): string => {
+  switch (node.data.type) {
+    case 'table':
+      return '#475569'; // slate-600 - structured, professional
+    case 'group':
+      return '#94a3b8'; // slate-400 - lighter for containers
+    case 'note':
+      return '#d97706'; // amber-600 - stands out as annotation
+    default:
+      return '#64748b';
+  }
+};
 import { Toolbar } from '@/components/Toolbar';
 import { PropertiesPanel } from '@/components/panels';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -148,7 +171,10 @@ function Flow() {
       <Background gap={15} size={1} />
       <Controls />
       <MiniMap
-        nodeStrokeWidth={3}
+        nodeStrokeWidth={2}
+        nodeBorderRadius={2}
+        nodeColor={getMiniMapNodeColor}
+        nodeStrokeColor={getMiniMapNodeStrokeColor}
         zoomable
         pannable
         className="!bg-card border border-border rounded-md shadow-md"

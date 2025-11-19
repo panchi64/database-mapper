@@ -98,16 +98,16 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
+.react-flow__minimap-mask {
+  fill: rgba(0, 0, 0, 0.08);
+}
+
 .dark .react-flow__minimap {
   background-color: hsl(var(--card));
 }
 
 .dark .react-flow__minimap-mask {
-  fill: hsl(var(--muted));
-}
-
-.dark .react-flow__minimap-node {
-  fill: hsl(var(--primary));
+  fill: rgba(255, 255, 255, 0.06);
 }
 
 /* Background pattern */
