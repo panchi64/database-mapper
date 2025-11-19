@@ -77,7 +77,7 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
         position={Position.Left}
         id={`${column.id}-left`}
         className={cn(
-          '!w-2 !h-2 !bg-muted-foreground',
+          '!w-3 !h-3 !bg-muted-foreground',
           '!border-2 !border-card',
           'hover:!bg-blue-500 transition-colors'
         )}
@@ -101,7 +101,7 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
         {/* Column name */}
         <span
           className={cn(
-            'font-medium truncate text-white'
+            'font-medium truncate text-slate-900 dark:text-slate-100'
           )}
         >
           {column.name}
@@ -131,7 +131,7 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
         position={Position.Right}
         id={`${column.id}-right`}
         className={cn(
-          '!w-2 !h-2 !bg-muted-foreground',
+          '!w-3 !h-3 !bg-muted-foreground',
           '!border-2 !border-card',
           'hover:!bg-blue-500 transition-colors'
         )}
