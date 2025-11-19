@@ -16,6 +16,8 @@ import {
 
 export function KeyboardShortcutsDialog() {
   const shortcuts = [
+    { keys: 'Ctrl + C', description: 'Copy selected nodes' },
+    { keys: 'Ctrl + V', description: 'Paste nodes' },
     { keys: 'Delete', description: 'Delete selected item' },
     { keys: 'Backspace', description: 'Delete selected item' },
     { keys: 'Ctrl + Z', description: 'Undo last action' },

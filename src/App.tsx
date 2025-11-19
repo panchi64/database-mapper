@@ -5,6 +5,7 @@ import {
   Controls,
   MiniMap,
   ReactFlowProvider,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -31,6 +32,8 @@ function Flow() {
     deleteSelected,
     undo,
     redo,
+    copySelectedNodes,
+    pasteNodes,
   } = useStore(
     useShallow((state) => ({
       nodes: state.nodes,
@@ -44,8 +47,13 @@ function Flow() {
       deleteSelected: state.deleteSelected,
       undo: state.undo,
       redo: state.redo,
+      copySelectedNodes: state.copySelectedNodes,
+      pasteNodes: state.pasteNodes,
     }))
   );
+
+  // Get React Flow instance for viewport operations
+  const { getViewport } = useReactFlow();
 
   // Handle node selection
   const onNodeClick = useCallback((_: React.MouseEvent, node: any) => {
@@ -61,6 +69,15 @@ function Flow() {
   const onPaneClick = useCallback(() => {
     clearSelection();
   }, [clearSelection]);
+
+  // Helper to get viewport center position
+  const getViewportCenter = useCallback(() => {
+    const viewport = getViewport();
+    // Calculate center of the visible viewport
+    const centerX = (window.innerWidth / 2 - viewport.x) / viewport.zoom;
+    const centerY = (window.innerHeight / 2 - viewport.y) / viewport.zoom;
+    return { x: centerX, y: centerY };
+  }, [getViewport]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -83,11 +100,24 @@ function Flow() {
         e.preventDefault();
         redo();
       }
+
+      // Ctrl+C - copy selected nodes
+      if (e.key === 'c' && (e.ctrlKey || e.metaKey) && !isInputFocused()) {
+        e.preventDefault();
+        copySelectedNodes();
+      }
+
+      // Ctrl+V - paste nodes
+      if (e.key === 'v' && (e.ctrlKey || e.metaKey) && !isInputFocused()) {
+        e.preventDefault();
+        const position = getViewportCenter();
+        pasteNodes(position);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [deleteSelected, undo, redo]);
+  }, [deleteSelected, undo, redo, copySelectedNodes, pasteNodes, getViewportCenter]);
 
   // Memoize static options to prevent unnecessary re-renders
   const defaultEdgeOptions = useMemo(() => ({

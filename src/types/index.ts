@@ -119,3 +119,10 @@ export const PRESET_COLORS = [
   { name: 'purple', value: '#a855f7' },
   { name: 'pink', value: '#ec4899' },
 ] as const;
+
+// Clipboard data format for copy/paste
+export interface ClipboardData {
+  type: 'db-mapper-nodes';
+  version: '1.0';
+  nodes: DBNode[];
+}

@@ -2,6 +2,16 @@ import { memo } from 'react';
 import { NodeResizer } from '@xyflow/react';
 import { Folder } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStore } from '@/store';
+import { useShallow } from 'zustand/react/shallow';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import type { GroupNodeData } from '@/types';
 
 interface GroupNodeProps {
@@ -50,49 +60,81 @@ const colorMap: Record<string, { bg: string; border: string; header: string; tex
   },
 };
 
-export const GroupNode = memo(({ data, selected }: GroupNodeProps) => {
+export const GroupNode = memo(({ data, selected, id }: GroupNodeProps) => {
   const color = data.color || 'slate';
   const colorClasses = colorMap[color] || colorMap.slate;
 
+  const { copySelectedNodes, deleteNode, setSelectedNode } = useStore(
+    useShallow((state) => ({
+      copySelectedNodes: state.copySelectedNodes,
+      deleteNode: state.deleteNode,
+      setSelectedNode: state.setSelectedNode,
+    }))
+  );
+
+  const handleCopy = () => {
+    setSelectedNode(id);
+    setTimeout(() => copySelectedNodes(), 0);
+  };
+
+  const handleDelete = () => {
+    deleteNode(id);
+  };
+
   return (
-    <>
-      {/* Resizer handles - only show when selected */}
-      <NodeResizer
-        minWidth={200}
-        minHeight={100}
-        isVisible={selected}
-        lineClassName="!border-blue-500"
-        handleClassName="!w-2 !h-2 !bg-blue-500 !border-white"
-      />
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div className="w-full h-full">
+          {/* Resizer handles - only show when selected */}
+          <NodeResizer
+            minWidth={200}
+            minHeight={100}
+            isVisible={selected}
+            lineClassName="!border-blue-500"
+            handleClassName="!w-2 !h-2 !bg-blue-500 !border-white"
+          />
 
-      {/* Group container */}
-      <div
-        className={cn(
-          'w-full h-full rounded-lg border-2 border-dashed',
-          colorClasses.bg,
-          colorClasses.border,
-          selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
-        )}
-      >
-        {/* Header */}
-        <div
-          className={cn(
-            'flex items-center gap-2 px-3 py-2 rounded-t-md',
-            colorClasses.header
-          )}
-        >
-          <Folder className={cn('w-4 h-4', colorClasses.text)} />
-          <span className={cn('font-semibold text-sm', colorClasses.text)}>
-            {data.name}
-          </span>
-        </div>
+          {/* Group container */}
+          <div
+            className={cn(
+              'w-full h-full rounded-lg border-2 border-dashed',
+              colorClasses.bg,
+              colorClasses.border,
+              selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
+            )}
+          >
+            {/* Header */}
+            <div
+              className={cn(
+                'flex items-center gap-2 px-3 py-2 rounded-t-md',
+                colorClasses.header
+              )}
+            >
+              <Folder className={cn('w-4 h-4', colorClasses.text)} />
+              <span className={cn('font-semibold text-sm', colorClasses.text)}>
+                {data.name}
+              </span>
+            </div>
 
-        {/* Content area */}
-        <div className="p-2 min-h-[60px]">
-          {/* This area is intentionally empty - child nodes are rendered by React Flow */}
+            {/* Content area */}
+            <div className="p-2 min-h-[60px]">
+              {/* This area is intentionally empty - child nodes are rendered by React Flow */}
+            </div>
+          </div>
         </div>
-      </div>
-    </>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={handleCopy}>
+          Copy
+          <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleDelete} className="text-red-600 dark:text-red-400">
+          Delete
+          <ContextMenuShortcut>Del</ContextMenuShortcut>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 });
 

@@ -3,6 +3,15 @@ import { NodeResizer, Handle, Position } from '@xyflow/react';
 import { StickyNote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
+import { useShallow } from 'zustand/react/shallow';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import type { NoteNodeData } from '@/types';
 
 interface NoteNodeProps {
@@ -54,8 +63,24 @@ const colorMap: Record<string, { bg: string; border: string; text: string; place
 export const NoteNode = memo(({ data, selected, id }: NoteNodeProps) => {
   const color = data.color || 'yellow';
   const colorClasses = colorMap[color] || colorMap.yellow;
-  const updateNoteContent = useStore((state) => state.updateNoteContent);
-  const updateNoteName = useStore((state) => state.updateNoteName);
+  const { updateNoteContent, updateNoteName, copySelectedNodes, deleteNode, setSelectedNode } = useStore(
+    useShallow((state) => ({
+      updateNoteContent: state.updateNoteContent,
+      updateNoteName: state.updateNoteName,
+      copySelectedNodes: state.copySelectedNodes,
+      deleteNode: state.deleteNode,
+      setSelectedNode: state.setSelectedNode,
+    }))
+  );
+
+  const handleCopyNode = () => {
+    setSelectedNode(id);
+    setTimeout(() => copySelectedNodes(), 0);
+  };
+
+  const handleDeleteNode = () => {
+    deleteNode(id);
+  };
 
   // Local state for editing content
   const [isEditing, setIsEditing] = useState(false);
@@ -154,36 +179,38 @@ export const NoteNode = memo(({ data, selected, id }: NoteNodeProps) => {
   }, []);
 
   return (
-    <>
-      {/* Resizer handles - only show when selected */}
-      <NodeResizer
-        minWidth={150}
-        minHeight={100}
-        isVisible={selected}
-        lineClassName="!border-blue-500"
-        handleClassName="!w-2 !h-2 !bg-blue-500 !border-white"
-      />
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div className="w-full h-full">
+          {/* Resizer handles - only show when selected */}
+          <NodeResizer
+            minWidth={150}
+            minHeight={100}
+            isVisible={selected}
+            lineClassName="!border-blue-500"
+            handleClassName="!w-2 !h-2 !bg-blue-500 !border-white"
+          />
 
-      {/* Single connection handle for linking to tables */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="note"
-        isConnectableStart={true}
-        isConnectableEnd={true}
-        className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white dark:!border-slate-800"
-      />
+          {/* Single connection handle for linking to tables */}
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            id="note"
+            isConnectableStart={true}
+            isConnectableEnd={true}
+            className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white dark:!border-slate-800"
+          />
 
-      {/* Note container */}
-      <div
-        className={cn(
-          'w-full h-full rounded-md border shadow-md',
-          colorClasses.bg,
-          colorClasses.border,
-          selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
-        )}
-        onDoubleClick={handleDoubleClick}
-      >
+          {/* Note container */}
+          <div
+            className={cn(
+              'w-full h-full rounded-md border shadow-md',
+              colorClasses.bg,
+              colorClasses.border,
+              selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
+            )}
+            onDoubleClick={handleDoubleClick}
+          >
         {/* Header with icon */}
         <div className={cn('flex items-center gap-2 px-3 py-2 border-b', colorClasses.border)}>
           <StickyNote className={cn('w-4 h-4 flex-shrink-0', colorClasses.text)} />
@@ -236,10 +263,23 @@ export const NoteNode = memo(({ data, selected, id }: NoteNodeProps) => {
             >
               {content || 'Double-click to edit...'}
             </div>
-          )}
+            )}
+          </div>
+          </div>
         </div>
-      </div>
-    </>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={handleCopyNode}>
+          Copy
+          <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleDeleteNode} className="text-red-600 dark:text-red-400">
+          Delete
+          <ContextMenuShortcut>Del</ContextMenuShortcut>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 });
 

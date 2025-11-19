@@ -16,6 +16,7 @@ import {
   HistoryEntry,
   Cardinality,
   DiagramState,
+  ClipboardData,
 } from '@/types';
 
 const MAX_HISTORY = 50;
@@ -95,6 +96,10 @@ interface StoreState {
   exportDiagram: () => DiagramState;
   importDiagram: (state: DiagramState) => void;
   clearDiagram: () => void;
+
+  // Actions - Clipboard
+  copySelectedNodes: () => Promise<void>;
+  pasteNodes: (position: { x: number; y: number }) => Promise<string[] | undefined>;
 }
 
 export const useStore = create<StoreState>()(
@@ -546,6 +551,112 @@ export const useStore = create<StoreState>()(
           selectedNodeId: null,
           selectedEdgeId: null,
         });
+      },
+
+      // Clipboard operations
+      copySelectedNodes: async () => {
+        const { nodes } = get();
+        // Get all selected nodes (React Flow manages selection via node.selected)
+        const selectedNodes = nodes.filter((node) => node.selected);
+
+        if (selectedNodes.length === 0) return;
+
+        const clipboardData: ClipboardData = {
+          type: 'db-mapper-nodes',
+          version: '1.0',
+          nodes: structuredClone(selectedNodes),
+        };
+
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(clipboardData));
+        } catch (err) {
+          console.error('Failed to copy to clipboard:', err);
+        }
+      },
+
+      pasteNodes: async (position) => {
+        try {
+          const text = await navigator.clipboard.readText();
+          const data = JSON.parse(text);
+
+          // Validate clipboard data format
+          if (data.type !== 'db-mapper-nodes' || !Array.isArray(data.nodes)) {
+            return;
+          }
+
+          const clipboardData = data as ClipboardData;
+
+          if (clipboardData.nodes.length === 0) return;
+
+          // Calculate the bounding box of copied nodes to determine offset
+          const minX = Math.min(...clipboardData.nodes.map((n) => n.position.x));
+          const minY = Math.min(...clipboardData.nodes.map((n) => n.position.y));
+
+          // Map old IDs to new IDs for reference
+          const idMap = new Map<string, string>();
+
+          const newNodes: DBNode[] = clipboardData.nodes.map((node) => {
+            const newId = uuidv4();
+            idMap.set(node.id, newId);
+
+            // Calculate position relative to first node, centered at paste position
+            const offsetX = node.position.x - minX;
+            const offsetY = node.position.y - minY;
+
+            const baseNode = {
+              ...node,
+              id: newId,
+              position: {
+                x: position.x + offsetX,
+                y: position.y + offsetY,
+              },
+              selected: false,
+            };
+
+            // Handle different node types
+            if (node.data.type === 'table') {
+              return {
+                ...baseNode,
+                data: {
+                  ...node.data,
+                  name: `${node.data.name} (copy)`,
+                  columns: node.data.columns.map((col: Column) => ({
+                    ...col,
+                    id: uuidv4(),
+                    // Clear foreign keys as they reference old table IDs
+                    foreignKey: undefined,
+                  })),
+                },
+              } as DBNode;
+            } else if (node.data.type === 'group') {
+              return {
+                ...baseNode,
+                data: {
+                  ...node.data,
+                  name: `${node.data.name} (copy)`,
+                },
+              } as DBNode;
+            } else if (node.data.type === 'note') {
+              return {
+                ...baseNode,
+                data: {
+                  ...node.data,
+                  name: `${node.data.name} (copy)`,
+                },
+              } as DBNode;
+            }
+
+            return baseNode as DBNode;
+          });
+
+          get().saveToHistory();
+          set({ nodes: [...get().nodes, ...newNodes] });
+
+          return newNodes.map((n) => n.id);
+        } catch (err) {
+          // Silent fail for invalid clipboard data
+          console.error('Failed to paste from clipboard:', err);
+        }
       },
     }),
     {
