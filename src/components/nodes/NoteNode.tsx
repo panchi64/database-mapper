@@ -203,14 +203,12 @@ export const NoteNode = memo(({ data, selected, id }: NoteNodeProps) => {
             handleClassName="!w-2 !h-2 !bg-blue-500 !border-white"
           />
 
-          {/* Single connection handle for linking to tables */}
+          {/* Single connection handle for linking to tables - Blue circle (source) */}
           <Handle
             type="source"
             position={Position.Bottom}
             id="note"
-            isConnectableStart={true}
-            isConnectableEnd={true}
-            className="!w-3 !h-3 !bg-slate-400 !border-2 !border-white dark:!border-slate-800"
+            className="!w-3 !h-3 !bg-blue-400 dark:!bg-blue-500 !border-2 !border-white dark:!border-slate-800 !rounded-full"
           />
 
           {/* Note container */}

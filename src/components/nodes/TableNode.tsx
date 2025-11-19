@@ -81,15 +81,15 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
         'hover:bg-muted/50 transition-colors'
       )}
     >
-      {/* Left handle for this column */}
+      {/* Left handle for this column - target (receives connections) - Amber square */}
       <Handle
         type="target"
         position={Position.Left}
         id={`${column.id}-left`}
         className={cn(
-          '!w-3 !h-3 !bg-muted-foreground',
-          '!border-2 !border-card',
-          'hover:!bg-blue-500 transition-colors'
+          '!w-3 !h-3 !bg-amber-400 dark:!bg-amber-500',
+          '!border-2 !border-white dark:!border-slate-800',
+          '!rounded-sm'
         )}
         style={{ top: '50%' }}
       />
@@ -135,15 +135,15 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
         {dataTypeDisplay}
       </span>
 
-      {/* Right handle for this column */}
+      {/* Right handle for this column - source (initiates connections) - Blue circle */}
       <Handle
         type="source"
         position={Position.Right}
         id={`${column.id}-right`}
         className={cn(
-          '!w-3 !h-3 !bg-muted-foreground',
-          '!border-2 !border-card',
-          'hover:!bg-blue-500 transition-colors'
+          '!w-3 !h-3 !bg-blue-400 dark:!bg-blue-500',
+          '!border-2 !border-white dark:!border-slate-800',
+          '!rounded-full'
         )}
         style={{ top: '50%' }}
       />
@@ -198,15 +198,15 @@ export const TableNode = memo(({ data, selected, id }: TableNodeProps) => {
               selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
             )}
           >
-      {/* Top handle for general connections */}
+      {/* Top handle for general connections - target (receives connections) - Amber square */}
       <Handle
         type="target"
         position={Position.Top}
         id="top"
         className={cn(
-          '!w-3 !h-3 !bg-muted-foreground',
-          '!border-2 !border-card',
-          'hover:!bg-blue-500 transition-colors'
+          '!w-3 !h-3 !bg-amber-400 dark:!bg-amber-500',
+          '!border-2 !border-white dark:!border-slate-800',
+          '!rounded-sm'
         )}
       />
 
@@ -249,15 +249,15 @@ export const TableNode = memo(({ data, selected, id }: TableNodeProps) => {
         )}
       </div>
 
-          {/* Bottom handle for general connections */}
+          {/* Bottom handle for general connections - source (initiates connections) - Blue circle */}
           <Handle
             type="source"
             position={Position.Bottom}
             id="bottom"
             className={cn(
-              '!w-3 !h-3 !bg-muted-foreground',
-              '!border-2 !border-card',
-              'hover:!bg-blue-500 transition-colors'
+              '!w-3 !h-3 !bg-blue-400 dark:!bg-blue-500',
+              '!border-2 !border-white dark:!border-slate-800',
+              '!rounded-full'
             )}
           />
           </div>
