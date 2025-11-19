@@ -52,6 +52,16 @@ const colorMap: Record<string, { bg: string; border: string; text: string }> = {
     border: 'border-red-300 dark:border-red-700',
     text: 'text-red-900 dark:text-red-100',
   },
+  yellow: {
+    bg: 'bg-yellow-100 dark:bg-yellow-900',
+    border: 'border-yellow-300 dark:border-yellow-700',
+    text: 'text-yellow-900 dark:text-yellow-100',
+  },
+  pink: {
+    bg: 'bg-pink-100 dark:bg-pink-900',
+    border: 'border-pink-300 dark:border-pink-700',
+    text: 'text-pink-900 dark:text-pink-100',
+  },
 };
 
 interface ColumnRowProps {

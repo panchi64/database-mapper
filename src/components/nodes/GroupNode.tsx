@@ -58,6 +58,18 @@ const colorMap: Record<string, { bg: string; border: string; header: string; tex
     header: 'bg-red-100 dark:bg-red-900/50',
     text: 'text-red-700 dark:text-red-300',
   },
+  yellow: {
+    bg: 'bg-yellow-50/80 dark:bg-yellow-900/40',
+    border: 'border-yellow-300 dark:border-yellow-700',
+    header: 'bg-yellow-100 dark:bg-yellow-900/50',
+    text: 'text-yellow-700 dark:text-yellow-300',
+  },
+  pink: {
+    bg: 'bg-pink-50/80 dark:bg-pink-900/40',
+    border: 'border-pink-300 dark:border-pink-700',
+    header: 'bg-pink-100 dark:bg-pink-900/50',
+    text: 'text-pink-700 dark:text-pink-300',
+  },
 };
 
 export const GroupNode = memo(({ data, selected, id }: GroupNodeProps) => {

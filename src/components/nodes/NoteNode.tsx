@@ -22,6 +22,18 @@ interface NoteNodeProps {
 
 // Color mapping for sticky note backgrounds
 const colorMap: Record<string, { bg: string; border: string; text: string; placeholder: string }> = {
+  slate: {
+    bg: 'bg-slate-100 dark:bg-slate-900/60',
+    border: 'border-slate-300 dark:border-slate-700',
+    text: 'text-slate-900 dark:text-slate-100',
+    placeholder: 'placeholder-slate-500 dark:placeholder-slate-600',
+  },
+  red: {
+    bg: 'bg-red-100 dark:bg-red-900/60',
+    border: 'border-red-300 dark:border-red-700',
+    text: 'text-red-900 dark:text-red-100',
+    placeholder: 'placeholder-red-500 dark:placeholder-red-600',
+  },
   yellow: {
     bg: 'bg-yellow-100 dark:bg-yellow-900/60',
     border: 'border-yellow-300 dark:border-yellow-700',
