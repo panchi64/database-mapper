@@ -2,6 +2,16 @@ import { memo } from 'react';
 import { Handle, Position, NodeResizer } from '@xyflow/react';
 import { Key, Link } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStore } from '@/store';
+import { useShallow } from 'zustand/react/shallow';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import type { TableNodeData, Column } from '@/types';
 
 interface TableNodeProps {
@@ -42,6 +52,16 @@ const colorMap: Record<string, { bg: string; border: string; text: string }> = {
     border: 'border-red-300 dark:border-red-700',
     text: 'text-red-900 dark:text-red-100',
   },
+  yellow: {
+    bg: 'bg-yellow-100 dark:bg-yellow-900',
+    border: 'border-yellow-300 dark:border-yellow-700',
+    text: 'text-yellow-900 dark:text-yellow-100',
+  },
+  pink: {
+    bg: 'bg-pink-100 dark:bg-pink-900',
+    border: 'border-pink-300 dark:border-pink-700',
+    text: 'text-pink-900 dark:text-pink-100',
+  },
 };
 
 interface ColumnRowProps {
@@ -67,7 +87,7 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
         position={Position.Left}
         id={`${column.id}-left`}
         className={cn(
-          '!w-2 !h-2 !bg-muted-foreground',
+          '!w-3 !h-3 !bg-muted-foreground',
           '!border-2 !border-card',
           'hover:!bg-blue-500 transition-colors'
         )}
@@ -91,7 +111,7 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
         {/* Column name */}
         <span
           className={cn(
-            'font-medium truncate text-white'
+            'font-medium truncate text-slate-900 dark:text-slate-100'
           )}
         >
           {column.name}
@@ -121,7 +141,7 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
         position={Position.Right}
         id={`${column.id}-right`}
         className={cn(
-          '!w-2 !h-2 !bg-muted-foreground',
+          '!w-3 !h-3 !bg-muted-foreground',
           '!border-2 !border-card',
           'hover:!bg-blue-500 transition-colors'
         )}
@@ -133,30 +153,51 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
 
 ColumnRow.displayName = 'ColumnRow';
 
-export const TableNode = memo(({ data, selected, id: _id }: TableNodeProps) => {
+export const TableNode = memo(({ data, selected, id }: TableNodeProps) => {
   const color = data.color || 'slate';
   const colorClasses = colorMap[color] || colorMap.slate;
 
-  return (
-    <>
-      {/* Resizer handles - only show when selected */}
-      <NodeResizer
-        minWidth={200}
-        minHeight={150}
-        isVisible={selected}
-        lineClassName="!border-blue-500"
-        handleClassName="!w-2 !h-2 !bg-blue-500 !border-white"
-      />
+  const { copySelectedNodes, deleteNode, setSelectedNode } = useStore(
+    useShallow((state) => ({
+      copySelectedNodes: state.copySelectedNodes,
+      deleteNode: state.deleteNode,
+      setSelectedNode: state.setSelectedNode,
+    }))
+  );
 
-      <div
-        className={cn(
-          'w-full h-full min-w-[200px] overflow-hidden flex flex-col',
-          'bg-white dark:bg-slate-900',
-          'border rounded-lg shadow-md',
-          'border-border',
-          selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
-        )}
-      >
+  const handleCopy = () => {
+    // Ensure this node is selected before copying
+    setSelectedNode(id);
+    // Small delay to ensure selection is registered
+    setTimeout(() => copySelectedNodes(), 0);
+  };
+
+  const handleDelete = () => {
+    deleteNode(id);
+  };
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div className="w-full h-full">
+          {/* Resizer handles - only show when selected */}
+          <NodeResizer
+            minWidth={200}
+            minHeight={150}
+            isVisible={selected}
+            lineClassName="!border-blue-500"
+            handleClassName="!w-2 !h-2 !bg-blue-500 !border-white"
+          />
+
+          <div
+            className={cn(
+              'w-full h-full min-w-[200px] overflow-hidden flex flex-col',
+              'bg-white dark:bg-slate-900',
+              'border rounded-lg shadow-md',
+              'border-border',
+              selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
+            )}
+          >
       {/* Top handle for general connections */}
       <Handle
         type="target"
@@ -208,19 +249,32 @@ export const TableNode = memo(({ data, selected, id: _id }: TableNodeProps) => {
         )}
       </div>
 
-      {/* Bottom handle for general connections */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="bottom"
-        className={cn(
-          '!w-3 !h-3 !bg-muted-foreground',
-          '!border-2 !border-card',
-          'hover:!bg-blue-500 transition-colors'
-        )}
-      />
-    </div>
-    </>
+          {/* Bottom handle for general connections */}
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            id="bottom"
+            className={cn(
+              '!w-3 !h-3 !bg-muted-foreground',
+              '!border-2 !border-card',
+              'hover:!bg-blue-500 transition-colors'
+            )}
+          />
+          </div>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={handleCopy}>
+          Copy
+          <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleDelete} className="text-red-600 dark:text-red-400">
+          Delete
+          <ContextMenuShortcut>Del</ContextMenuShortcut>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 });
 
