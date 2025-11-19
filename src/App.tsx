@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -15,6 +15,8 @@ import { edgeTypes } from '@/components/edges';
 import { Toolbar } from '@/components/Toolbar';
 import { PropertiesPanel } from '@/components/panels';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { CoordinatesDisplay } from '@/components/CoordinatesDisplay';
+import { useFileOperations } from '@/hooks/useFileOperations';
 
 function Flow() {
   const {
@@ -121,6 +123,7 @@ function Flow() {
         pannable
         className="!bg-card border border-border rounded-md shadow-md"
       />
+      <CoordinatesDisplay />
     </ReactFlow>
   );
 }
@@ -136,10 +139,40 @@ function isInputFocused(): boolean {
 }
 
 function App() {
+  const [isDragging, setIsDragging] = useState(false);
+  const { handleFileDrop } = useFileOperations();
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Only set dragging to false if we're leaving the container
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleFileDrop(file);
+    }
+  }, [handleFileDrop]);
+
   return (
     <ThemeProvider>
       <ReactFlowProvider>
-        <div className="h-screen w-screen flex flex-col">
+        <div
+          className="h-screen w-screen flex flex-col"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <Toolbar />
           <div className="flex-1 flex overflow-hidden">
             <div className="flex-1 relative">
@@ -147,6 +180,13 @@ function App() {
             </div>
             <PropertiesPanel />
           </div>
+          {isDragging && (
+            <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm border-2 border-dashed border-primary pointer-events-none z-50 flex items-center justify-center">
+              <div className="bg-card px-6 py-4 rounded-lg shadow-lg border border-border">
+                <p className="text-lg font-medium text-foreground">Drop JSON file to load diagram</p>
+              </div>
+            </div>
+          )}
         </div>
       </ReactFlowProvider>
     </ThemeProvider>

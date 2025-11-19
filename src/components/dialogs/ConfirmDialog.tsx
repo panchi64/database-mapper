@@ -48,11 +48,11 @@ export function ConfirmDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel}>
+          <Button variant="ghost" onClick={handleCancel}>
             {cancelLabel}
           </Button>
           <Button
-            variant={destructive ? 'destructive' : 'default'}
+            variant={destructive ? 'destructive' : 'outline'}
             onClick={handleConfirm}
           >
             {confirmLabel}

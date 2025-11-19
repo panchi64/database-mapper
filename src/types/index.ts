@@ -53,6 +53,7 @@ export interface GroupNodeData {
 // Note/Comment node data
 export interface NoteNodeData {
   type: 'note';
+  name: string;
   content: string;
   color?: string;
   [key: string]: unknown;

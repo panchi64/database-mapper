@@ -61,6 +61,7 @@ export function PropertiesPanel() {
   // Note actions
   const updateNoteContent = useStore((state) => state.updateNoteContent);
   const updateNoteColor = useStore((state) => state.updateNoteColor);
+  const updateNoteName = useStore((state) => state.updateNoteName);
 
   // Edge actions
   const updateEdgeCardinality = useStore((state) => state.updateEdgeCardinality);
@@ -126,6 +127,9 @@ export function PropertiesPanel() {
     const targetColumns =
       targetNode?.data.type === 'table' ? targetNode.data.columns : [];
 
+    // Check if this is a note link (no cardinality for notes)
+    const isNoteLink = sourceNode?.data.type === 'note' || targetNode?.data.type === 'note';
+
     // Get source and target table names for header
     const sourceName = sourceNode?.data?.type === 'table' ? sourceNode.data.name : 'Unknown';
     const targetName = targetNode?.data?.type === 'table' ? targetNode.data.name : 'Unknown';
@@ -154,25 +158,27 @@ export function PropertiesPanel() {
                   />
                 </div>
 
-                {/* Cardinality */}
-                <div className="space-y-2">
-                  <Label htmlFor="edge-cardinality">Cardinality</Label>
-                  <Select
-                    value={selectedEdge.data?.cardinality || 'one-to-many'}
-                    onValueChange={(value) =>
-                      updateEdgeCardinality(selectedEdge.id, value as Cardinality)
-                    }
-                  >
-                    <SelectTrigger id="edge-cardinality">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="one-to-one">One to One</SelectItem>
-                      <SelectItem value="one-to-many">One to Many</SelectItem>
-                      <SelectItem value="many-to-many">Many to Many</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Cardinality - only for table relationships */}
+                {!isNoteLink && (
+                  <div className="space-y-2">
+                    <Label htmlFor="edge-cardinality">Cardinality</Label>
+                    <Select
+                      value={selectedEdge.data?.cardinality || 'one-to-many'}
+                      onValueChange={(value) =>
+                        updateEdgeCardinality(selectedEdge.id, value as Cardinality)
+                      }
+                    >
+                      <SelectTrigger id="edge-cardinality">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="one-to-one">One to One</SelectItem>
+                        <SelectItem value="one-to-many">One to Many</SelectItem>
+                        <SelectItem value="many-to-many">Many to Many</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Source Column */}
                 {sourceColumns.length > 0 && (
@@ -389,9 +395,22 @@ export function PropertiesPanel() {
           <div className="p-4 space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Note</CardTitle>
+                <CardTitle className="text-sm font-medium">Note: {noteData.name || 'Note'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="note-name">Name</Label>
+                  <Input
+                    id="note-name"
+                    value={noteData.name || ''}
+                    onChange={(e) =>
+                      updateNoteName(selectedNode!.id, e.target.value)
+                    }
+                    placeholder="e.g., Design Notes, TODO"
+                  />
+                </div>
+
                 {/* Content */}
                 <div className="space-y-2">
                   <Label htmlFor="note-content">Content</Label>

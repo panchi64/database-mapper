@@ -7,6 +7,7 @@ import {
 } from '@xyflow/react';
 import { Cardinality, RelationshipEdgeData } from '@/types';
 import { cn } from '@/lib/utils';
+import { useStore } from '@/store';
 
 // Helper functions to determine marker types based on cardinality
 function getSourceType(cardinality?: Cardinality): 'one' | 'many' {
@@ -123,6 +124,8 @@ const CrowsFootMarker = ({ x, y, position, type, selected }: CrowsFootMarkerProp
 
 interface RelationshipEdgeProps {
   id: string;
+  source: string;
+  target: string;
   sourceX: number;
   sourceY: number;
   targetX: number;
@@ -136,6 +139,8 @@ interface RelationshipEdgeProps {
 
 export const RelationshipEdge = memo(({
   id,
+  source,
+  target,
   sourceX,
   sourceY,
   targetX,
@@ -146,6 +151,11 @@ export const RelationshipEdge = memo(({
   selected,
   style,
 }: RelationshipEdgeProps) => {
+  const nodes = useStore((state) => state.nodes);
+  const sourceNode = nodes.find(n => n.id === source);
+  const targetNode = nodes.find(n => n.id === target);
+  const isNoteLink = sourceNode?.data.type === 'note' || targetNode?.data.type === 'note';
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -165,41 +175,46 @@ export const RelationshipEdge = memo(({
         path={edgePath}
         style={{
           ...style,
-          strokeWidth: selected ? 2.5 : 2,
+          strokeWidth: selected ? 2.5 : (isNoteLink ? 1.5 : 2),
+          strokeDasharray: isNoteLink ? '4 4' : undefined,
         }}
         className={cn(
-          selected ? 'stroke-primary' : 'stroke-muted-foreground'
+          isNoteLink
+            ? (selected ? 'stroke-primary' : 'stroke-slate-400')
+            : (selected ? 'stroke-primary' : 'stroke-muted-foreground')
         )}
       />
 
-      {/* Custom SVG layer for markers */}
-      <svg
-        style={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-          overflow: 'visible',
-        }}
-      >
-        {/* Source marker (one or many) */}
-        <CrowsFootMarker
-          x={sourceX}
-          y={sourceY}
-          position={sourcePosition}
-          type={sourceType}
-          selected={selected}
-        />
+      {/* Custom SVG layer for markers - only show for table relationships */}
+      {!isNoteLink && (
+        <svg
+          style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            overflow: 'visible',
+          }}
+        >
+          {/* Source marker (one or many) */}
+          <CrowsFootMarker
+            x={sourceX}
+            y={sourceY}
+            position={sourcePosition}
+            type={sourceType}
+            selected={selected}
+          />
 
-        {/* Target marker (one or many) */}
-        <CrowsFootMarker
-          x={targetX}
-          y={targetY}
-          position={targetPosition}
-          type={targetType}
-          selected={selected}
-        />
-      </svg>
+          {/* Target marker (one or many) */}
+          <CrowsFootMarker
+            x={targetX}
+            y={targetY}
+            position={targetPosition}
+            type={targetType}
+            selected={selected}
+          />
+        </svg>
+      )}
 
       {/* Label */}
       {data?.label && (
