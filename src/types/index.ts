@@ -76,6 +76,8 @@ export interface RelationshipEdgeData {
   sourceColumn?: string;
   targetColumn?: string;
   isNoteLink?: boolean; // Flag to indicate if edge connects to a note node
+  color?: 'slate' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink'; // Edge color from preset palette
+  pattern?: 'solid' | 'dashed' | 'dotted' | 'dash-dot'; // Edge line pattern
   [key: string]: unknown;
 }
 

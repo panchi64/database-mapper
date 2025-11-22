@@ -71,6 +71,8 @@ interface StoreState {
   updateEdgeCardinality: (edgeId: string, cardinality: Cardinality) => void;
   updateEdgeLabel: (edgeId: string, label: string) => void;
   updateEdgeColumns: (edgeId: string, sourceColumn: string, targetColumn: string) => void;
+  updateEdgeColor: (edgeId: string, color?: string) => void;
+  updateEdgePattern: (edgeId: string, pattern?: string) => void;
 
   // Actions - Delete
   deleteNode: (nodeId: string) => void;
@@ -141,6 +143,8 @@ export const useStore = create<StoreState>()(
             type: 'relationship',
             cardinality: 'one-to-many',
             isNoteLink,
+            // Default pattern for note links
+            pattern: isNoteLink ? 'dashed' : undefined,
           },
         } as DBEdge;
 
@@ -444,6 +448,28 @@ export const useStore = create<StoreState>()(
         });
       },
 
+      updateEdgeColor: (edgeId, color) => {
+        get().saveToHistory();
+        set({
+          edges: get().edges.map((edge) =>
+            edge.id === edgeId
+              ? { ...edge, data: { ...edge.data, color } }
+              : edge
+          ) as DBEdge[],
+        });
+      },
+
+      updateEdgePattern: (edgeId, pattern) => {
+        get().saveToHistory();
+        set({
+          edges: get().edges.map((edge) =>
+            edge.id === edgeId
+              ? { ...edge, data: { ...edge.data, pattern } }
+              : edge
+          ) as DBEdge[],
+        });
+      },
+
       // Delete operations
       deleteNode: (nodeId) => {
         get().saveToHistory();
@@ -673,7 +699,7 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'db-mapper-storage',
-      version: 1, // Schema version for data migration tracking
+      version: 2, // Schema version for data migration tracking
       partialize: (state) => ({
         nodes: state.nodes,
         edges: state.edges,
@@ -689,15 +715,20 @@ export const useStore = create<StoreState>()(
        * Version History:
        * - v0 (implicit): Original schema without version tracking
        * - v1: Added isNoteLink field to RelationshipEdgeData
+       * - v2: Added color and pattern fields to RelationshipEdgeData
        *
        * Why migration is needed:
-       * The isNoteLink field was added to prevent race conditions in edge rendering.
+       * v0→v1: The isNoteLink field was added to prevent race conditions in edge rendering.
        * Previously, the RelationshipEdge component looked up nodes from the store on
        * every render to determine if it connected to a note node. This caused edges to
        * randomly disappear when nodes updated during drag/selection operations.
        *
        * Now, isNoteLink is computed once when the edge is created and stored in edge data.
        * This migration ensures old saved diagrams get this field added automatically.
+       *
+       * v1→v2: Edge customization features (color and pattern) were added. This migration
+       * sets default pattern='dashed' for edges where isNoteLink=true to maintain visual
+       * consistency with the previous behavior.
        *
        * @param persistedState - The saved state from localStorage
        * @param version - The version number of the saved state (0 if no version tracked)
@@ -745,8 +776,48 @@ export const useStore = create<StoreState>()(
           };
         }
 
+        // Migration from v1 to v2 (add pattern field to note link edges)
+        if (version === 1) {
+          const state = persistedState as {
+            nodes: DBNode[];
+            edges: DBEdge[];
+            theme: 'light' | 'dark' | 'system';
+          };
+
+          /**
+           * Set pattern='dashed' for edges where isNoteLink=true to maintain
+           * the visual appearance from v1. This ensures existing diagrams look
+           * the same after upgrading to v2.
+           */
+          const migratedEdges = state.edges.map((edge: DBEdge) => {
+            // Skip edges that already have a pattern set
+            if (edge.data?.pattern !== undefined) {
+              return edge;
+            }
+
+            // Set default pattern for note links
+            if (edge.data?.isNoteLink === true) {
+              return {
+                ...edge,
+                data: {
+                  ...edge.data,
+                  pattern: 'dashed' as const,
+                },
+              } as DBEdge;
+            }
+
+            // Return edge unchanged (table relationships default to solid)
+            return edge;
+          });
+
+          // Return the migrated state
+          return {
+            ...state,
+            edges: migratedEdges,
+          };
+        }
+
         // Future migrations can be added here:
-        // if (version === 1) { /* migrate v1 to v2 */ }
         // if (version === 2) { /* migrate v2 to v3 */ }
 
         // No migration needed - return state as-is

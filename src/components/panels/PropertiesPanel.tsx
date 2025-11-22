@@ -67,6 +67,8 @@ export function PropertiesPanel() {
   const updateEdgeCardinality = useStore((state) => state.updateEdgeCardinality);
   const updateEdgeLabel = useStore((state) => state.updateEdgeLabel);
   const updateEdgeColumns = useStore((state) => state.updateEdgeColumns);
+  const updateEdgeColor = useStore((state) => state.updateEdgeColor);
+  const updateEdgePattern = useStore((state) => state.updateEdgePattern);
 
   // If nothing is selected
   if (!selectedNode && !selectedEdge) {
@@ -235,6 +237,44 @@ export function PropertiesPanel() {
                     </Select>
                   </div>
                 )}
+
+                <Separator />
+
+                {/* Color */}
+                <div className="space-y-2">
+                  <Label>Color</Label>
+                  <ColorPicker
+                    value={selectedEdge.data?.color}
+                    onChange={(color) => updateEdgeColor(selectedEdge.id, color)}
+                  />
+                </div>
+
+                {/* Pattern */}
+                <div className="space-y-2">
+                  <Label htmlFor="edge-pattern">Line Pattern</Label>
+                  <Select
+                    value={selectedEdge.data?.pattern || 'default'}
+                    onValueChange={(value) =>
+                      updateEdgePattern(
+                        selectedEdge.id,
+                        value === 'default' ? undefined : value
+                      )
+                    }
+                  >
+                    <SelectTrigger id="edge-pattern">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">
+                        Default {isNoteLink ? '(Dashed)' : '(Solid)'}
+                      </SelectItem>
+                      <SelectItem value="solid">Solid ——</SelectItem>
+                      <SelectItem value="dashed">Dashed - - -</SelectItem>
+                      <SelectItem value="dotted">Dotted · · ·</SelectItem>
+                      <SelectItem value="dash-dot">Dash-Dot -·-·-</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
           </div>

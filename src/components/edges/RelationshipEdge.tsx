@@ -19,6 +19,40 @@ function getTargetType(cardinality?: Cardinality): 'one' | 'many' {
   return 'many'; // one-to-many and many-to-many both have 'many' on target
 }
 
+// Map edge color to HSL/hex string for SVG stroke
+function getEdgeColorHSL(color?: string, selected?: boolean): string {
+  if (selected) return 'hsl(var(--primary))';
+
+  switch (color) {
+    case 'slate': return '#64748b';
+    case 'red': return '#ef4444';
+    case 'orange': return '#f97316';
+    case 'yellow': return '#eab308';
+    case 'green': return '#22c55e';
+    case 'blue': return '#3b82f6';
+    case 'purple': return '#a855f7';
+    case 'pink': return '#ec4899';
+    default: return 'hsl(var(--muted-foreground))';
+  }
+}
+
+// Map edge pattern to strokeDasharray value
+function getEdgePattern(pattern?: string, isNoteLink?: boolean): string | undefined {
+  // Priority: explicit pattern > note link default > solid
+  if (pattern) {
+    switch (pattern) {
+      case 'solid': return undefined;
+      case 'dashed': return '4 4';
+      case 'dotted': return '1 3';
+      case 'dash-dot': return '8 4 2 4';
+      default: return undefined;
+    }
+  }
+
+  // Fallback to note link behavior
+  return isNoteLink ? '4 4' : undefined;
+}
+
 // Calculate the angle for marker rotation based on position
 function getMarkerRotation(position: Position): number {
   switch (position) {
@@ -57,16 +91,16 @@ interface CrowsFootMarkerProps {
   y: number;
   position: Position;
   type: 'one' | 'many';
-  selected?: boolean;
+  color: string; // HSL color string
 }
 
-const CrowsFootMarker = ({ x, y, position, type, selected }: CrowsFootMarkerProps) => {
+const CrowsFootMarker = ({ x, y, position, type, color }: CrowsFootMarkerProps) => {
   const rotation = getMarkerRotation(position);
   const { dx, dy } = getMarkerOffset(position);
   const markerX = x + dx;
   const markerY = y + dy;
 
-  const strokeColor = selected ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))';
+  const strokeColor = color;
   const strokeWidth = 2;
 
   if (type === 'one') {
@@ -156,7 +190,7 @@ export const RelationshipEdge = memo(({
    * render. The migration system (see useStore.ts persist config) ensures old
    * saved diagrams are automatically upgraded to include this field.
    *
-   * - true: Renders as dashed line (note connection)
+   * - true: Renders as dashed line (note connection) by default
    * - false/undefined: Renders as solid line with cardinality markers (table relationship)
    */
   const isNoteLink = data?.isNoteLink ?? false;
@@ -173,6 +207,13 @@ export const RelationshipEdge = memo(({
   const sourceType = getSourceType(data?.cardinality);
   const targetType = getTargetType(data?.cardinality);
 
+  // Get color and pattern from data, with fallbacks
+  const edgeColor = data?.color;
+  const edgePattern = data?.pattern;
+
+  const strokeDasharray = getEdgePattern(edgePattern, isNoteLink);
+  const edgeStrokeColor = getEdgeColorHSL(edgeColor, selected);
+
   return (
     <>
       <BaseEdge
@@ -181,13 +222,9 @@ export const RelationshipEdge = memo(({
         style={{
           ...style,
           strokeWidth: selected ? 2.5 : (isNoteLink ? 1.5 : 2),
-          strokeDasharray: isNoteLink ? '4 4' : undefined,
+          strokeDasharray,
+          stroke: edgeStrokeColor, // Apply color to both edge line and markers
         }}
-        className={cn(
-          isNoteLink
-            ? (selected ? 'stroke-primary' : 'stroke-slate-400')
-            : (selected ? 'stroke-primary' : 'stroke-muted-foreground')
-        )}
       />
 
       {/* Custom SVG layer for markers - only show for table relationships */}
@@ -207,7 +244,7 @@ export const RelationshipEdge = memo(({
             y={sourceY}
             position={sourcePosition}
             type={sourceType}
-            selected={selected}
+            color={edgeStrokeColor}
           />
 
           {/* Target marker (one or many) */}
@@ -216,7 +253,7 @@ export const RelationshipEdge = memo(({
             y={targetY}
             position={targetPosition}
             type={targetType}
-            selected={selected}
+            color={edgeStrokeColor}
           />
         </svg>
       )}
