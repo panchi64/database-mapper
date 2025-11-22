@@ -7,7 +7,6 @@ import {
 } from '@xyflow/react';
 import { Cardinality, RelationshipEdgeData } from '@/types';
 import { cn } from '@/lib/utils';
-import { useStore } from '@/store';
 
 // Helper functions to determine marker types based on cardinality
 function getSourceType(cardinality?: Cardinality): 'one' | 'many' {
@@ -139,8 +138,6 @@ interface RelationshipEdgeProps {
 
 export const RelationshipEdge = memo(({
   id,
-  source,
-  target,
   sourceX,
   sourceY,
   targetX,
@@ -151,10 +148,18 @@ export const RelationshipEdge = memo(({
   selected,
   style,
 }: RelationshipEdgeProps) => {
-  const nodes = useStore((state) => state.nodes);
-  const sourceNode = nodes.find(n => n.id === source);
-  const targetNode = nodes.find(n => n.id === target);
-  const isNoteLink = sourceNode?.data.type === 'note' || targetNode?.data.type === 'note';
+  /**
+   * Read isNoteLink from edge data to determine rendering style.
+   *
+   * This value is set when edges are created (onConnect action) and prevents
+   * race conditions that occurred when looking up nodes from the store during
+   * render. The migration system (see useStore.ts persist config) ensures old
+   * saved diagrams are automatically upgraded to include this field.
+   *
+   * - true: Renders as dashed line (note connection)
+   * - false/undefined: Renders as solid line with cardinality markers (table relationship)
+   */
+  const isNoteLink = data?.isNoteLink ?? false;
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,

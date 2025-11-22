@@ -127,6 +127,12 @@ export const useStore = create<StoreState>()(
       },
 
       onConnect: (connection) => {
+        // Determine if connection involves a note node
+        const nodes = get().nodes;
+        const sourceNode = nodes.find(n => n.id === connection.source);
+        const targetNode = nodes.find(n => n.id === connection.target);
+        const isNoteLink = sourceNode?.data.type === 'note' || targetNode?.data.type === 'note';
+
         const newEdge: DBEdge = {
           ...connection,
           id: uuidv4(),
@@ -134,6 +140,7 @@ export const useStore = create<StoreState>()(
           data: {
             type: 'relationship',
             cardinality: 'one-to-many',
+            isNoteLink,
           },
         } as DBEdge;
 
@@ -310,6 +317,11 @@ export const useStore = create<StoreState>()(
             }
             return node;
           }) as DBNode[],
+          // Clean up edges that reference this column's handles
+          edges: get().edges.filter(edge =>
+            edge.sourceHandle !== `${columnId}-right` &&
+            edge.targetHandle !== `${columnId}-left`
+          ),
         });
       },
 
@@ -661,11 +673,85 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'db-mapper-storage',
+      version: 1, // Schema version for data migration tracking
       partialize: (state) => ({
         nodes: state.nodes,
         edges: state.edges,
         theme: state.theme,
       }),
+      /**
+       * Migration function for upgrading persisted data between schema versions.
+       *
+       * This runs automatically when Zustand detects the stored version differs from
+       * the current version. Each migration case handles upgrading from one version
+       * to the next, allowing multiple migrations to chain for older saved data.
+       *
+       * Version History:
+       * - v0 (implicit): Original schema without version tracking
+       * - v1: Added isNoteLink field to RelationshipEdgeData
+       *
+       * Why migration is needed:
+       * The isNoteLink field was added to prevent race conditions in edge rendering.
+       * Previously, the RelationshipEdge component looked up nodes from the store on
+       * every render to determine if it connected to a note node. This caused edges to
+       * randomly disappear when nodes updated during drag/selection operations.
+       *
+       * Now, isNoteLink is computed once when the edge is created and stored in edge data.
+       * This migration ensures old saved diagrams get this field added automatically.
+       *
+       * @param persistedState - The saved state from localStorage
+       * @param version - The version number of the saved state (0 if no version tracked)
+       * @returns The migrated state with current schema
+       */
+      migrate: (persistedState: any, version: number) => {
+        // Migration from v0 (no version) to v1 (add isNoteLink to edges)
+        if (version === 0) {
+          const state = persistedState as {
+            nodes: DBNode[];
+            edges: DBEdge[];
+            theme: 'light' | 'dark' | 'system';
+          };
+
+          /**
+           * For each edge missing the isNoteLink field, compute its value by checking
+           * if the source or target node is a note. This replicates the old runtime
+           * lookup behavior but does it once during migration instead of on every render.
+           */
+          const migratedEdges = state.edges.map((edge: DBEdge) => {
+            // Skip edges that already have the field (shouldn't happen in v0, but defensive)
+            if (edge.data?.isNoteLink !== undefined) {
+              return edge;
+            }
+
+            // Look up the source and target nodes to determine if this is a note link
+            const sourceNode = state.nodes.find(n => n.id === edge.source);
+            const targetNode = state.nodes.find(n => n.id === edge.target);
+            const isNoteLink = sourceNode?.data.type === 'note' || targetNode?.data.type === 'note';
+
+            // Return edge with isNoteLink field added to data
+            return {
+              ...edge,
+              data: {
+                ...edge.data,
+                isNoteLink,
+              },
+            } as DBEdge;
+          });
+
+          // Return the migrated state
+          return {
+            ...state,
+            edges: migratedEdges,
+          };
+        }
+
+        // Future migrations can be added here:
+        // if (version === 1) { /* migrate v1 to v2 */ }
+        // if (version === 2) { /* migrate v2 to v3 */ }
+
+        // No migration needed - return state as-is
+        return persistedState;
+      },
     }
   )
 );

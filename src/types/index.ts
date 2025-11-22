@@ -75,6 +75,7 @@ export interface RelationshipEdgeData {
   label?: string;
   sourceColumn?: string;
   targetColumn?: string;
+  isNoteLink?: boolean; // Flag to indicate if edge connects to a note node
   [key: string]: unknown;
 }
 
