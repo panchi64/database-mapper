@@ -807,10 +807,6 @@ export const useStore = create<StoreState>()(
       },
 
       setSearchOpen: (open: boolean) => {
-        if (!open) {
-          // Clear search when closing
-          get().clearSearch();
-        }
         set({ isSearchOpen: open });
       },
     }),

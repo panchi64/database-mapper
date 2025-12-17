@@ -1,16 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
-import { Search, Table, Columns, X } from 'lucide-react';
+import { Search, Table, Columns, X, ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
 import type { SearchFilter, SearchResult } from '@/types';
@@ -55,57 +46,45 @@ function SearchResultItem({ result, query, onClick }: SearchResultItemProps) {
     <button
       onClick={onClick}
       className={cn(
-        'w-full text-left px-3 py-2 rounded-md transition-colors',
-        'hover:bg-muted focus:bg-muted focus:outline-none',
-        'border border-transparent hover:border-border'
+        'w-full text-left px-2 py-1.5 text-xs transition-colors',
+        'hover:bg-muted focus:bg-muted focus:outline-none'
       )}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {result.matchType === 'table' ? (
-          <Table className="w-4 h-4 text-blue-500 flex-shrink-0" />
+          <Table className="w-3 h-3 text-blue-500 flex-shrink-0" />
         ) : (
-          <Columns className="w-4 h-4 text-purple-500 flex-shrink-0" />
+          <Columns className="w-3 h-3 text-purple-500 flex-shrink-0" />
         )}
         <div className="flex-1 min-w-0">
           {result.matchType === 'table' ? (
-            <div className="font-medium text-sm truncate">
+            <span className="font-medium truncate block">
               <HighlightedText text={result.tableName} query={query} />
-            </div>
+            </span>
           ) : (
-            <>
-              <div className="text-xs text-muted-foreground truncate">
-                {result.tableName}
-              </div>
-              <div className="font-medium text-sm truncate">
-                <HighlightedText text={result.columnName || ''} query={query} />
-              </div>
-            </>
+            <span className="truncate block">
+              <span className="text-muted-foreground">{result.tableName}.</span>
+              <HighlightedText text={result.columnName || ''} query={query} />
+            </span>
           )}
         </div>
-        <span
-          className={cn(
-            'text-[10px] px-1.5 py-0.5 rounded font-medium',
-            result.matchType === 'table'
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-              : 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
-          )}
-        >
-          {result.matchType === 'table' ? 'Table' : 'Column'}
-        </span>
       </div>
     </button>
   );
 }
 
-const filterOptions: { value: SearchFilter; label: string; icon: React.ReactNode }[] = [
-  { value: 'all', label: 'All', icon: <Search className="w-3 h-3" /> },
-  { value: 'tables', label: 'Tables', icon: <Table className="w-3 h-3" /> },
-  { value: 'columns', label: 'Columns', icon: <Columns className="w-3 h-3" /> },
-];
+const filterLabels: Record<SearchFilter, string> = {
+  all: 'All',
+  tables: 'Tables',
+  columns: 'Columns',
+};
 
 export function GlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { setCenter } = useReactFlow();
+  const [showResults, setShowResults] = useState(false);
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   const {
     isSearchOpen,
@@ -115,6 +94,7 @@ export function GlobalSearch() {
     setSearchOpen,
     setSearchQuery,
     setSearchFilter,
+    clearSearch,
     setSelectedNode,
     nodes,
   } = useStore(
@@ -126,32 +106,44 @@ export function GlobalSearch() {
       setSearchOpen: state.setSearchOpen,
       setSearchQuery: state.setSearchQuery,
       setSearchFilter: state.setSearchFilter,
+      clearSearch: state.clearSearch,
       setSelectedNode: state.setSelectedNode,
       nodes: state.nodes,
     }))
   );
 
-  // Focus input when dialog opens
+  // Focus input when search opens via Ctrl+F
   useEffect(() => {
-    if (isSearchOpen) {
-      // Small delay to ensure dialog is rendered
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
-      return () => clearTimeout(timer);
+    if (isSearchOpen && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
     }
   }, [isSearchOpen]);
 
+  // Show results when there's a query
+  useEffect(() => {
+    setShowResults(searchQuery.trim().length > 0);
+  }, [searchQuery]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+        setShowFilterMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleResultClick = useCallback(
     (result: SearchResult) => {
-      // Find the node
       const node = nodes.find((n) => n.id === result.nodeId);
       if (!node) return;
 
-      // Select the node
       setSelectedNode(result.nodeId);
 
-      // Center viewport on the node
       const nodeWidth = (node.style?.width as number) || 250;
       const nodeHeight = (node.style?.height as number) || 200;
       setCenter(
@@ -160,110 +152,133 @@ export function GlobalSearch() {
         { zoom: 1, duration: 500 }
       );
 
-      // Close search dialog
-      setSearchOpen(false);
+      setShowResults(false);
     },
-    [nodes, setSelectedNode, setCenter, setSearchOpen]
+    [nodes, setSelectedNode, setCenter]
   );
 
   const handleClearSearch = useCallback(() => {
-    setSearchQuery('');
+    clearSearch();
+    setShowResults(false);
     inputRef.current?.focus();
-  }, [setSearchQuery]);
+  }, [clearSearch]);
+
+  const handleFilterSelect = useCallback((filter: SearchFilter) => {
+    setSearchFilter(filter);
+    setShowFilterMenu(false);
+    inputRef.current?.focus();
+  }, [setSearchFilter]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      if (showResults) {
+        setShowResults(false);
+      } else {
+        handleClearSearch();
+      }
+    }
+  }, [showResults, handleClearSearch]);
+
+  const handleFocus = useCallback(() => {
+    setSearchOpen(true);
+    if (searchQuery.trim()) {
+      setShowResults(true);
+    }
+  }, [setSearchOpen, searchQuery]);
 
   return (
-    <Dialog open={isSearchOpen} onOpenChange={setSearchOpen}>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] flex flex-col gap-0 p-0 overflow-hidden">
-        <DialogHeader className="px-4 pt-4 pb-3 border-b">
-          <DialogTitle className="flex items-center gap-2 text-foreground">
-            <Search className="w-5 h-5" />
-            Search Diagram
-          </DialogTitle>
-        </DialogHeader>
-
-        {/* Search Input */}
-        <div className="px-4 py-3 border-b">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              ref={inputRef}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tables and columns..."
-              className="pl-9 pr-9"
-            />
-            {searchQuery && (
-              <button
-                onClick={handleClearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-4 h-4" />
-              </button>
+    <div
+      ref={containerRef}
+      className="absolute top-2 right-44 z-10 pointer-events-auto"
+    >
+      <div className="flex items-center gap-1">
+        {/* Filter dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+            className={cn(
+              'flex items-center gap-1 px-2 py-1 text-xs rounded-l',
+              'bg-card/90 border border-r-0 border-border',
+              'text-muted-foreground hover:text-foreground',
+              'backdrop-blur-sm transition-colors'
             )}
-          </div>
-
-          {/* Filter Buttons */}
-          <div className="flex gap-1 mt-3">
-            {filterOptions.map((option) => (
-              <Button
-                key={option.value}
-                variant={searchFilter === option.value ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSearchFilter(option.value)}
-                className="flex-1 gap-1"
-              >
-                {option.icon}
-                {option.label}
-              </Button>
-            ))}
-          </div>
+          >
+            {filterLabels[searchFilter]}
+            <ChevronDown className="w-3 h-3" />
+          </button>
+          {showFilterMenu && (
+            <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded shadow-lg overflow-hidden min-w-[80px]">
+              {(['all', 'tables', 'columns'] as SearchFilter[]).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => handleFilterSelect(filter)}
+                  className={cn(
+                    'w-full text-left px-2 py-1.5 text-xs transition-colors',
+                    'hover:bg-muted',
+                    searchFilter === filter && 'bg-muted font-medium'
+                  )}
+                >
+                  {filterLabels[filter]}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Results */}
-        <ScrollArea className="flex-1 min-h-0 max-h-[400px]">
-          <div className="p-2">
-            {searchQuery.trim() === '' ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Search className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">Start typing to search</p>
-                <p className="text-xs mt-1">
-                  Search through table names and column names
-                </p>
-              </div>
-            ) : searchResults.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">No results found</p>
-                <p className="text-xs mt-1">
-                  Try a different search term or filter
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground px-3 py-1">
-                  {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
-                </p>
-                {searchResults.map((result, index) => (
-                  <SearchResultItem
-                    key={`${result.nodeId}-${result.matchType}-${result.columnId || index}`}
-                    result={result}
-                    query={searchQuery}
-                    onClick={() => handleResultClick(result)}
-                  />
-                ))}
-              </div>
+        {/* Search input */}
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={handleFocus}
+            onKeyDown={handleKeyDown}
+            placeholder="Search..."
+            className={cn(
+              'w-40 pl-7 pr-7 py-1 text-xs rounded-r',
+              'bg-card/90 border border-border',
+              'text-foreground placeholder:text-muted-foreground',
+              'backdrop-blur-sm shadow-sm',
+              'focus:outline-none focus:ring-1 focus:ring-ring'
             )}
-          </div>
-        </ScrollArea>
+          />
+          {searchQuery && (
+            <button
+              onClick={handleClearSearch}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
 
-        {/* Footer with keyboard hint */}
-        <div className="px-4 py-2 border-t bg-muted/50 text-xs text-muted-foreground">
-          <kbd className="px-1.5 py-0.5 bg-background border rounded text-[10px]">Ctrl+F</kbd>
-          <span className="ml-2">to open search</span>
-          <span className="mx-2">•</span>
-          <kbd className="px-1.5 py-0.5 bg-background border rounded text-[10px]">Esc</kbd>
-          <span className="ml-2">to close</span>
+          {/* Results dropdown */}
+          {showResults && (
+            <div className="absolute top-full right-0 mt-1 w-64 max-h-60 overflow-y-auto bg-card border border-border rounded shadow-lg">
+              {searchResults.length === 0 ? (
+                <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                  No results found
+                </div>
+              ) : (
+                <div>
+                  <div className="px-2 py-1 text-[10px] text-muted-foreground border-b border-border">
+                    {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                  </div>
+                  {searchResults.map((result, index) => (
+                    <SearchResultItem
+                      key={`${result.nodeId}-${result.matchType}-${result.columnId || index}`}
+                      result={result}
+                      query={searchQuery}
+                      onClick={() => handleResultClick(result)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
