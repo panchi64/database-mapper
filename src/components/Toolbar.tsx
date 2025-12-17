@@ -11,6 +11,7 @@ import {
   Moon,
   Trash2,
   Group,
+  Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -55,6 +56,7 @@ export function Toolbar() {
   const canUndo = useStore((state) => state.canUndo());
   const canRedo = useStore((state) => state.canRedo());
   const clearDiagram = useStore((state) => state.clearDiagram);
+  const setSearchOpen = useStore((state) => state.setSearchOpen);
 
   const { saveDiagram, loadDiagram } = useFileOperations();
 
@@ -163,6 +165,22 @@ export function Toolbar() {
             </TooltipTrigger>
             <TooltipContent>
               <p>Redo (Ctrl+Shift+Z)</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="toolbar"
+                size="toolbarIcon"
+                onClick={() => setSearchOpen(true)}
+              >
+                <Search className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Search</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Search Diagram (Ctrl+F)</p>
             </TooltipContent>
           </Tooltip>
         </div>

@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Handle, Position, NodeResizer } from '@xyflow/react';
 import { Key, Link } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,7 +12,7 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import type { TableNodeData, Column } from '@/types';
+import type { TableNodeData, Column, SearchHighlight } from '@/types';
 
 interface TableNodeProps {
   data: TableNodeData;
@@ -66,9 +66,10 @@ const colorMap: Record<string, { bg: string; border: string; text: string }> = {
 
 interface ColumnRowProps {
   column: Column;
+  isHighlighted?: boolean;
 }
 
-const ColumnRow = memo(({ column }: ColumnRowProps) => {
+const ColumnRow = memo(({ column, isHighlighted }: ColumnRowProps) => {
   const dataTypeDisplay = column.length
     ? `${column.dataType}(${column.length})`
     : column.dataType;
@@ -78,7 +79,8 @@ const ColumnRow = memo(({ column }: ColumnRowProps) => {
       className={cn(
         'relative flex items-center justify-between px-3 py-1.5 text-xs',
         'border-b border-border last:border-b-0',
-        'hover:bg-muted/50 transition-colors'
+        'hover:bg-muted/50 transition-colors',
+        isHighlighted && 'bg-yellow-100 dark:bg-yellow-900/50 border-l-2 border-l-yellow-400'
       )}
     >
       {/* Left handle for this column - target (receives connections) - Amber square */}
@@ -157,13 +159,27 @@ export const TableNode = memo(({ data, selected, id }: TableNodeProps) => {
   const color = data.color || 'slate';
   const colorClasses = colorMap[color] || colorMap.slate;
 
-  const { copySelectedNodes, deleteNode, setSelectedNode } = useStore(
+  const { copySelectedNodes, deleteNode, setSelectedNode, searchHighlights } = useStore(
     useShallow((state) => ({
       copySelectedNodes: state.copySelectedNodes,
       deleteNode: state.deleteNode,
       setSelectedNode: state.setSelectedNode,
+      searchHighlights: state.searchHighlights,
     }))
   );
+
+  // Get highlight info for this node
+  const highlight: SearchHighlight | undefined = useMemo(
+    () => searchHighlights.get(id),
+    [searchHighlights, id]
+  );
+
+  // Check if a column should be highlighted
+  const isColumnHighlighted = useMemo(() => {
+    if (!highlight) return () => false;
+    const highlightedSet = new Set(highlight.matchingColumnIds);
+    return (columnId: string) => highlightedSet.has(columnId);
+  }, [highlight]);
 
   const handleCopy = () => {
     // Ensure this node is selected before copying
@@ -215,7 +231,8 @@ export const TableNode = memo(({ data, selected, id }: TableNodeProps) => {
         className={cn(
           'px-3 py-2 rounded-t-lg border-b',
           colorClasses.bg,
-          colorClasses.border
+          colorClasses.border,
+          highlight?.tableNameMatch && 'ring-2 ring-inset ring-yellow-400 dark:ring-yellow-500'
         )}
       >
         <div className="flex items-center gap-2">
@@ -240,7 +257,11 @@ export const TableNode = memo(({ data, selected, id }: TableNodeProps) => {
       <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white dark:bg-slate-900">
         {data.columns.length > 0 ? (
           data.columns.map((column) => (
-            <ColumnRow key={column.id} column={column} />
+            <ColumnRow
+              key={column.id}
+              column={column}
+              isHighlighted={isColumnHighlighted(column.id)}
+            />
           ))
         ) : (
           <div className="px-3 py-2 text-xs text-slate-400 dark:text-slate-500 italic">

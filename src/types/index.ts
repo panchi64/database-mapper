@@ -129,3 +129,21 @@ export interface ClipboardData {
   version: '1.0';
   nodes: DBNode[];
 }
+
+// Search filter types
+export type SearchFilter = 'all' | 'tables' | 'columns';
+
+// Search result type
+export interface SearchResult {
+  nodeId: string;
+  tableName: string;
+  matchType: 'table' | 'column';
+  columnName?: string;
+  columnId?: string;
+}
+
+// Search highlight info for a node
+export interface SearchHighlight {
+  tableNameMatch: boolean;
+  matchingColumnIds: string[];
+}

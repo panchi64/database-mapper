@@ -17,6 +17,9 @@ import {
   Cardinality,
   DiagramState,
   ClipboardData,
+  SearchFilter,
+  SearchResult,
+  SearchHighlight,
 } from '@/types';
 
 const MAX_HISTORY = 50;
@@ -36,6 +39,13 @@ interface StoreState {
 
   // Theme
   theme: 'light' | 'dark' | 'system';
+
+  // Search (not persisted)
+  searchQuery: string;
+  searchFilter: SearchFilter;
+  searchResults: SearchResult[];
+  searchHighlights: Map<string, SearchHighlight>;
+  isSearchOpen: boolean;
 
   // Actions - Node management
   onNodesChange: (changes: NodeChange<DBNode>[]) => void;
@@ -102,6 +112,12 @@ interface StoreState {
   // Actions - Clipboard
   copySelectedNodes: () => Promise<void>;
   pasteNodes: (position: { x: number; y: number }) => Promise<string[] | undefined>;
+
+  // Actions - Search
+  setSearchQuery: (query: string) => void;
+  setSearchFilter: (filter: SearchFilter) => void;
+  clearSearch: () => void;
+  setSearchOpen: (open: boolean) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -114,6 +130,13 @@ export const useStore = create<StoreState>()(
       history: [],
       historyIndex: -1,
       theme: 'system',
+
+      // Search state (not persisted)
+      searchQuery: '',
+      searchFilter: 'all' as SearchFilter,
+      searchResults: [],
+      searchHighlights: new Map(),
+      isSearchOpen: false,
 
       // React Flow change handlers
       onNodesChange: (changes) => {
@@ -695,6 +718,100 @@ export const useStore = create<StoreState>()(
           // Silent fail for invalid clipboard data
           console.error('Failed to paste from clipboard:', err);
         }
+      },
+
+      // Search actions
+      setSearchQuery: (query: string) => {
+        const { nodes, searchFilter } = get();
+        const trimmedQuery = query.trim().toLowerCase();
+
+        if (!trimmedQuery) {
+          set({
+            searchQuery: query,
+            searchResults: [],
+            searchHighlights: new Map(),
+          });
+          return;
+        }
+
+        const results: SearchResult[] = [];
+        const highlights = new Map<string, SearchHighlight>();
+
+        // Search through table nodes
+        nodes.forEach((node) => {
+          if (node.data.type !== 'table') return;
+
+          const tableNameMatch = node.data.name.toLowerCase().includes(trimmedQuery);
+          const matchingColumnIds: string[] = [];
+
+          // Check column matches
+          node.data.columns.forEach((column) => {
+            if (column.name.toLowerCase().includes(trimmedQuery)) {
+              matchingColumnIds.push(column.id);
+
+              // Add column result if filter allows
+              if (searchFilter === 'all' || searchFilter === 'columns') {
+                results.push({
+                  nodeId: node.id,
+                  tableName: node.data.name,
+                  matchType: 'column',
+                  columnName: column.name,
+                  columnId: column.id,
+                });
+              }
+            }
+          });
+
+          // Add table name result if filter allows
+          if (tableNameMatch && (searchFilter === 'all' || searchFilter === 'tables')) {
+            results.push({
+              nodeId: node.id,
+              tableName: node.data.name,
+              matchType: 'table',
+            });
+          }
+
+          // Store highlight info if there are any matches
+          if (tableNameMatch || matchingColumnIds.length > 0) {
+            highlights.set(node.id, {
+              tableNameMatch: tableNameMatch && (searchFilter === 'all' || searchFilter === 'tables'),
+              matchingColumnIds: (searchFilter === 'all' || searchFilter === 'columns') ? matchingColumnIds : [],
+            });
+          }
+        });
+
+        set({
+          searchQuery: query,
+          searchResults: results,
+          searchHighlights: highlights,
+        });
+      },
+
+      setSearchFilter: (filter: SearchFilter) => {
+        set({ searchFilter: filter });
+        // Re-run search with new filter
+        const { searchQuery } = get();
+        if (searchQuery.trim()) {
+          get().setSearchQuery(searchQuery);
+        }
+      },
+
+      clearSearch: () => {
+        set({
+          searchQuery: '',
+          searchFilter: 'all',
+          searchResults: [],
+          searchHighlights: new Map(),
+          isSearchOpen: false,
+        });
+      },
+
+      setSearchOpen: (open: boolean) => {
+        if (!open) {
+          // Clear search when closing
+          get().clearSearch();
+        }
+        set({ isSearchOpen: open });
       },
     }),
     {
