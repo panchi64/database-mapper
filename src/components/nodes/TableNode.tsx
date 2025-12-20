@@ -80,7 +80,7 @@ const ColumnRow = memo(({ column, isHighlighted }: ColumnRowProps) => {
         'relative flex items-center justify-between px-3 py-1.5 text-xs',
         'border-b border-border last:border-b-0',
         'hover:bg-muted/50 transition-colors',
-        isHighlighted && 'bg-yellow-100 dark:bg-yellow-900/50 border-l-2 border-l-yellow-400'
+        isHighlighted && 'bg-yellow-100 dark:bg-yellow-900/50 border-l-2 border-l-yellow-400 animate-pulse'
       )}
     >
       {/* Left handle for this column - target (receives connections) - Amber square */}
@@ -232,7 +232,7 @@ export const TableNode = memo(({ data, selected, id }: TableNodeProps) => {
           'px-3 py-2 rounded-t-lg border-b',
           colorClasses.bg,
           colorClasses.border,
-          highlight?.tableNameMatch && 'ring-2 ring-inset ring-yellow-400 dark:ring-yellow-500'
+          highlight?.tableNameMatch && 'ring-2 ring-inset ring-yellow-400 dark:ring-yellow-500 animate-pulse'
         )}
       >
         <div className="flex items-center gap-2">

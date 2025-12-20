@@ -160,37 +160,39 @@ function Flow() {
   const snapGrid = useMemo(() => [15, 15] as [number, number], []);
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      onNodeClick={onNodeClick}
-      onEdgeClick={onEdgeClick}
-      onPaneClick={onPaneClick}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      defaultEdgeOptions={defaultEdgeOptions}
-      fitView
-      snapToGrid
-      snapGrid={snapGrid}
-      className="bg-background"
-    >
-      <Background gap={15} size={1} />
-      <Controls />
-      <MiniMap
-        nodeStrokeWidth={2}
-        nodeBorderRadius={2}
-        nodeColor={getMiniMapNodeColor}
-        nodeStrokeColor={getMiniMapNodeStrokeColor}
-        zoomable
-        pannable
-        className="!bg-card border border-border rounded-md shadow-md"
-      />
-      <CoordinatesDisplay />
+    <>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
+        onPaneClick={onPaneClick}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        defaultEdgeOptions={defaultEdgeOptions}
+        fitView
+        snapToGrid
+        snapGrid={snapGrid}
+        className="bg-background"
+      >
+        <Background gap={15} size={1} />
+        <Controls />
+        <MiniMap
+          nodeStrokeWidth={2}
+          nodeBorderRadius={2}
+          nodeColor={getMiniMapNodeColor}
+          nodeStrokeColor={getMiniMapNodeStrokeColor}
+          zoomable
+          pannable
+          className="!bg-card border border-border rounded-md shadow-md"
+        />
+        <CoordinatesDisplay />
+      </ReactFlow>
       <GlobalSearch />
-    </ReactFlow>
+    </>
   );
 }
 
