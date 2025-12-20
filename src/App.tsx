@@ -40,6 +40,7 @@ import { Toolbar } from '@/components/Toolbar';
 import { PropertiesPanel } from '@/components/panels';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { CoordinatesDisplay } from '@/components/CoordinatesDisplay';
+import { GlobalSearch } from '@/components/GlobalSearch';
 import { useFileOperations } from '@/hooks/useFileOperations';
 
 function Flow() {
@@ -57,6 +58,7 @@ function Flow() {
     redo,
     copySelectedNodes,
     pasteNodes,
+    setSearchOpen,
   } = useStore(
     useShallow((state) => ({
       nodes: state.nodes,
@@ -72,6 +74,7 @@ function Flow() {
       redo: state.redo,
       copySelectedNodes: state.copySelectedNodes,
       pasteNodes: state.pasteNodes,
+      setSearchOpen: state.setSearchOpen,
     }))
   );
 
@@ -136,11 +139,17 @@ function Flow() {
         const position = getViewportCenter();
         pasteNodes(position);
       }
+
+      // Ctrl+F - open search
+      if (e.key === 'f' && (e.ctrlKey || e.metaKey) && !isInputFocused()) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [deleteSelected, undo, redo, copySelectedNodes, pasteNodes, getViewportCenter]);
+  }, [deleteSelected, undo, redo, copySelectedNodes, pasteNodes, getViewportCenter, setSearchOpen]);
 
   // Memoize static options to prevent unnecessary re-renders
   const defaultEdgeOptions = useMemo(() => ({
@@ -151,36 +160,39 @@ function Flow() {
   const snapGrid = useMemo(() => [15, 15] as [number, number], []);
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      onNodeClick={onNodeClick}
-      onEdgeClick={onEdgeClick}
-      onPaneClick={onPaneClick}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      defaultEdgeOptions={defaultEdgeOptions}
-      fitView
-      snapToGrid
-      snapGrid={snapGrid}
-      className="bg-background"
-    >
-      <Background gap={15} size={1} />
-      <Controls />
-      <MiniMap
-        nodeStrokeWidth={2}
-        nodeBorderRadius={2}
-        nodeColor={getMiniMapNodeColor}
-        nodeStrokeColor={getMiniMapNodeStrokeColor}
-        zoomable
-        pannable
-        className="!bg-card border border-border rounded-md shadow-md"
-      />
-      <CoordinatesDisplay />
-    </ReactFlow>
+    <>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
+        onPaneClick={onPaneClick}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        defaultEdgeOptions={defaultEdgeOptions}
+        fitView
+        snapToGrid
+        snapGrid={snapGrid}
+        className="bg-background"
+      >
+        <Background gap={15} size={1} />
+        <Controls />
+        <MiniMap
+          nodeStrokeWidth={2}
+          nodeBorderRadius={2}
+          nodeColor={getMiniMapNodeColor}
+          nodeStrokeColor={getMiniMapNodeStrokeColor}
+          zoomable
+          pannable
+          className="!bg-card border border-border rounded-md shadow-md"
+        />
+        <CoordinatesDisplay />
+      </ReactFlow>
+      <GlobalSearch />
+    </>
   );
 }
 
