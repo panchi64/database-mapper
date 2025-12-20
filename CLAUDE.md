@@ -9,10 +9,10 @@ DB Mapper is a visual database schema designer built with React and TypeScript. 
 ## Development Commands
 
 ```bash
-npm run dev      # Start Vite dev server
-npm run build    # TypeScript check + production build
-npm run lint     # Run ESLint
-npm run preview  # Preview production build
+bun dev      # Start Vite dev server
+bun run build    # TypeScript check + production build
+bun run lint     # Run ESLint
+bun run preview  # Preview production build
 ```
 
 ## Architecture
@@ -22,6 +22,7 @@ App.tsx
   └─ ThemeProvider (theme context)
       └─ ReactFlowProvider
           ├─ Toolbar (top bar controls)
+          ├─ GlobalSearch (inline search bar, Ctrl+F)
           ├─ ReactFlow canvas (nodes + edges)
           │   ├─ Background, Controls, MiniMap
           │   └─ CoordinatesDisplay
@@ -67,17 +68,19 @@ App.tsx
 **Non-persisted state** (resets on reload):
 - `selectedNodeId`, `selectedEdgeId` - Current selection
 - `history[]`, `historyIndex` - Undo/redo stack
+- `searchQuery`, `searchFilter`, `searchResults`, `searchHighlights`, `isSearchOpen` - Global search state
 
 ### Action Categories
 
 1. **React Flow**: `onNodesChange`, `onEdgesChange`, `onConnect`
 2. **Nodes**: `addTable`, `addGroup`, `addNote`, `updateTable*`, `deleteNode`
 3. **Columns**: `addColumn`, `updateColumn`, `deleteColumn`, `reorderColumns`
-4. **Edges**: `updateEdgeCardinality`, `updateEdgeLabel`, `updateEdgeColumns`
+4. **Edges**: `updateEdgeCardinality`, `updateEdgeLabel`, `updateEdgeColumns`, `updateEdgeColor`, `updateEdgePattern`
 5. **Selection**: `setSelectedNode`, `setSelectedEdge`, `clearSelection`
 6. **History**: `saveToHistory`, `undo`, `redo`, `canUndo`, `canRedo`
 7. **File**: `exportDiagram`, `importDiagram`, `clearDiagram`
 8. **Clipboard**: `copySelectedNodes`, `pasteNodes`
+9. **Search**: `setSearchQuery`, `setSearchFilter`, `clearSearch`, `setSearchOpen`
 
 ### Usage Patterns
 
@@ -135,6 +138,23 @@ interface ClipboardData {
   version: '1.0';
   nodes: DBNode[];
 }
+
+// Search types
+type SearchFilter = 'all' | 'tables' | 'columns';
+interface SearchResult {
+  nodeId: string;
+  tableName: string;
+  matchType: 'table' | 'column';
+  columnName?: string;
+  columnId?: string;
+}
+
+// Edge customization
+interface RelationshipEdgeData {
+  // ...
+  color?: 'slate' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink';
+  pattern?: 'solid' | 'dashed' | 'dotted' | 'dash-dot';
+}
 ```
 
 ### Styling
@@ -166,6 +186,17 @@ sourceHandle: sourceColumn ? `${sourceColumn}-right` : edge.sourceHandle,
 targetHandle: targetColumn ? `${targetColumn}-left` : edge.targetHandle,
 ```
 
+## Global Search
+
+Inline search bar for finding tables and columns across the diagram.
+
+- **Activation**: `Ctrl+F` or click search icon in toolbar
+- **Filters**: `all`, `tables`, `columns`
+- **Results**: Click to select and pan to matching node
+- **Highlights**: Matching tables/columns highlighted with amber ring
+
+Search state (query, results, highlights) is computed in the store via `setSearchQuery` and not persisted.
+
 ## Copy-Paste System
 
 **Copy** (`copySelectedNodes`):
@@ -183,9 +214,11 @@ targetHandle: targetColumn ? `${targetColumn}-left` : edge.targetHandle,
 
 - `Ctrl+C`: Copy selected nodes
 - `Ctrl+V`: Paste at viewport center
+- `Ctrl+F`: Open global search
 - `Delete/Backspace`: Delete selected element
 - `Ctrl+Z`: Undo
 - `Ctrl+Shift+Z` / `Ctrl+Y`: Redo
+- `Escape`: Close search (when search is focused)
 
 Shortcuts are disabled when input elements are focused (via `isInputFocused()` helper).
 
@@ -223,3 +256,16 @@ Shortcuts are disabled when input elements are focused (via `isInputFocused()` h
 - **Target**: ES2020
 - **Single-file output**: `viteSingleFile` plugin inlines all assets
 - **Asset inline limit**: 100MB (for complete bundling)
+
+## Storage Schema Versioning
+
+The store uses Zustand persist middleware with schema versioning and migrations:
+
+- **Current version**: 2
+- **Storage key**: `db-mapper-storage`
+
+**Migration history**:
+- v0→v1: Added `isNoteLink` field to edges (fixes edge rendering race condition)
+- v1→v2: Added `pattern` field to edges (sets `dashed` default for note links)
+
+When adding new persisted fields, increment the version and add a migration case in `useStore.ts`.
