@@ -1,7 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useStore } from '@/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,6 +15,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { ColorPicker } from './ColorPicker';
 import { ColumnEditor } from './ColumnEditor';
+import { PanelSection } from './PanelSection';
+import { TableRelationships } from './TableRelationships';
 import { Cardinality, TableNodeData, GroupNodeData, NoteNodeData } from '@/types';
 
 export function PropertiesPanel() {
@@ -40,8 +41,8 @@ export function PropertiesPanel() {
       const edge = state.edges.find((e) => e.id === state.selectedEdgeId);
       if (!edge) return null;
       return {
-        sourceNode: state.nodes.find((n) => n.id === edge.source),
-        targetNode: state.nodes.find((n) => n.id === edge.target),
+        sourceNode: state.nodes.find((n) => n.id === edge.source.nodeId),
+        targetNode: state.nodes.find((n) => n.id === edge.target.nodeId),
       };
     })
   );
@@ -100,7 +101,10 @@ export function PropertiesPanel() {
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">3</span>
                 <div>
                   <p className="font-medium">Connect tables</p>
-                  <p className="text-muted-foreground">Drag from one table's handle to another</p>
+                  <p className="text-muted-foreground">
+                    Press <kbd className="rounded border border-border px-1 text-[10px]">C</kbd> or
+                    use the Connect button — or drag between column dots
+                  </p>
                 </div>
               </div>
             </div>
@@ -139,14 +143,8 @@ export function PropertiesPanel() {
     return (
       <div className="w-80 border-l bg-background">
         <ScrollArea className="h-full">
-          <div className="p-4 space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">
-                  {sourceName} → {targetName}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          <div>
+            <PanelSection title={`${sourceName} → ${targetName}`}>
                 {/* Label */}
                 <div className="space-y-2">
                   <Label htmlFor="edge-label">Label</Label>
@@ -187,12 +185,12 @@ export function PropertiesPanel() {
                   <div className="space-y-2">
                     <Label htmlFor="edge-source-col">Source Column ({sourceName})</Label>
                     <Select
-                      value={selectedEdge.data?.sourceColumn || ''}
+                      value={selectedEdge.source.columnId || ''}
                       onValueChange={(value) =>
                         updateEdgeColumns(
                           selectedEdge.id,
                           value,
-                          selectedEdge.data?.targetColumn || ''
+                          selectedEdge.target.columnId || ''
                         )
                       }
                     >
@@ -215,11 +213,11 @@ export function PropertiesPanel() {
                   <div className="space-y-2">
                     <Label htmlFor="edge-target-col">Target Column ({targetName})</Label>
                     <Select
-                      value={selectedEdge.data?.targetColumn || ''}
+                      value={selectedEdge.target.columnId || ''}
                       onValueChange={(value) =>
                         updateEdgeColumns(
                           selectedEdge.id,
-                          selectedEdge.data?.sourceColumn || '',
+                          selectedEdge.source.columnId || '',
                           value
                         )
                       }
@@ -275,8 +273,7 @@ export function PropertiesPanel() {
                     </SelectContent>
                   </Select>
                 </div>
-              </CardContent>
-            </Card>
+            </PanelSection>
           </div>
         </ScrollArea>
       </div>
@@ -293,12 +290,8 @@ export function PropertiesPanel() {
     return (
       <div className="w-80 border-l bg-background">
         <ScrollArea className="h-full">
-          <div className="p-4 space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Table: {tableData.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          <div>
+            <PanelSection title={`Table: ${tableData.name}`}>
                 {/* Table Name */}
                 <div className="space-y-2">
                   <Label htmlFor="table-name">Name</Label>
@@ -336,27 +329,18 @@ export function PropertiesPanel() {
                     placeholder="Add notes about this table..."
                   />
                 </div>
-              </CardContent>
-            </Card>
-
-            <Separator />
+            </PanelSection>
 
             {/* Columns */}
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium">Columns</CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addColumn(selectedNode!.id)}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <PanelSection
+              title="Columns"
+              action={
+                <Button variant="outline" size="sm" onClick={() => addColumn(selectedNode!.id)}>
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
+                </Button>
+              }
+            >
                 {tableData.columns.map((column) => (
                   <ColumnEditor
                     key={column.id}
@@ -374,8 +358,9 @@ export function PropertiesPanel() {
                     No columns yet
                   </p>
                 )}
-              </CardContent>
-            </Card>
+            </PanelSection>
+
+            <TableRelationships nodeId={selectedNode!.id} />
           </div>
         </ScrollArea>
       </div>
@@ -389,12 +374,8 @@ export function PropertiesPanel() {
     return (
       <div className="w-80 border-l bg-background">
         <ScrollArea className="h-full">
-          <div className="p-4 space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Group: {groupData.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          <div>
+            <PanelSection title={`Group: ${groupData.name}`}>
                 {/* Group Name */}
                 <div className="space-y-2">
                   <Label htmlFor="group-name">Name</Label>
@@ -417,8 +398,7 @@ export function PropertiesPanel() {
                     }
                   />
                 </div>
-              </CardContent>
-            </Card>
+            </PanelSection>
           </div>
         </ScrollArea>
       </div>
@@ -432,12 +412,8 @@ export function PropertiesPanel() {
     return (
       <div className="w-80 border-l bg-background">
         <ScrollArea className="h-full">
-          <div className="p-4 space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Note: {noteData.name || 'Note'}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          <div>
+            <PanelSection title={`Note: ${noteData.name || 'Note'}`}>
                 {/* Name */}
                 <div className="space-y-2">
                   <Label htmlFor="note-name">Name</Label>
@@ -475,8 +451,7 @@ export function PropertiesPanel() {
                     }
                   />
                 </div>
-              </CardContent>
-            </Card>
+            </PanelSection>
           </div>
         </ScrollArea>
       </div>

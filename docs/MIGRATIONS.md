@@ -1,300 +1,123 @@
-# Database Schema Migrations
+# Persisted Schema Migrations
 
-This document explains how the DB Mapper application handles schema migrations for persisted data in localStorage.
+How DB Mapper upgrades diagrams saved in localStorage when the schema changes.
 
-## Overview
+## Where it lives
 
-DB Mapper uses Zustand's persist middleware with built-in version tracking and migration support. This ensures that users with old saved diagrams can seamlessly upgrade to new schema versions without data loss or manual intervention.
+| Thing | File |
+|---|---|
+| Migration functions (pure, testable) | `src/store/migrations.ts` |
+| Tests, including real version fixtures | `src/store/migrations.test.ts` |
+| Wiring into Zustand persist | `src/store/useStore.ts` (`persist` options) |
 
-## Current Schema Version
+**Current version: 3** (`CURRENT_SCHEMA_VERSION` in `src/store/migrations.ts`)
+**Storage key: `db-mapper-storage`**
 
-**Version 1** (Current)
+Diagram `.json` files carry the same version as `formatVersion`, and are read by
+`src/lib/diagramFile.ts` through this same migration chain — so a file exported by
+any older build still opens. See `parseDiagramFile`.
 
-## Migration System Architecture
+Only `{ nodes, edges, theme }` is persisted — `partialize` drops selection, history and search, which are all transient by design.
 
-### How It Works
+## How it runs
 
-1. **Version Tracking**: Each persisted state includes a `version` field
-2. **Automatic Detection**: When the app loads, Zustand compares stored version vs. current version
-3. **Migration Execution**: If versions differ, the `migrate` function runs to upgrade the data
-4. **One-Time Cost**: Migration runs once per version upgrade, not on every load
-5. **Persistence**: Migrated data is saved back to localStorage with the new version
+Zustand compares the `version` recorded in localStorage against `CURRENT_SCHEMA_VERSION` on load. If they differ, `migrate` runs once and the result is written back at the new version.
 
-### Location
+`migrate` in `useStore.ts` is deliberately thin. It narrows the blob with `assertPersistedShape`, hands it to `runMigrations`, and owns only the failure path:
 
-**File**: `src/store/useStore.ts`
-**Lines**: 674-757 (persist configuration)
-
-### Configuration Structure
-
-```typescript
-{
-  name: 'db-mapper-storage',
-  version: 1,  // Current schema version
-  partialize: (state) => ({ /* ... */ }),
-  migrate: (persistedState, version) => { /* ... */ }
-}
-```
-
-## Version History
-
-### Version 0 (Implicit)
-**Description**: Original schema without version tracking
-
-**Schema**:
-```typescript
-{
-  nodes: DBNode[];
-  edges: DBEdge[];
-  theme: 'light' | 'dark' | 'system';
-}
-```
-
-**Issues**:
-- `RelationshipEdgeData` lacked `isNoteLink` field
-- Edge rendering performed node lookups on every render
-- Caused race conditions leading to edges randomly disappearing
-
-### Version 1 (Current)
-**Description**: Added `isNoteLink` field to edge data
-
-**Schema Changes**:
-```typescript
-interface RelationshipEdgeData {
-  type: 'relationship';
-  cardinality?: Cardinality;
-  label?: string;
-  sourceColumn?: string;
-  targetColumn?: string;
-  isNoteLink?: boolean; // NEW FIELD
-  [key: string]: unknown;
-}
-```
-
-**Migration Logic** (v0 → v1):
-- Iterates through all edges
-- For edges missing `isNoteLink`:
-  - Looks up source and target nodes
-  - Computes `isNoteLink = sourceNode.type === 'note' || targetNode.type === 'note'`
-  - Adds field to edge data
-- Returns migrated state
-
-**Benefits**:
-- Eliminates store subscriptions in RelationshipEdge component
-- Fixes race condition bug causing edges to disappear
-- Improves rendering performance
-- Maintains backward compatibility with old saved files
-
-## Adding Future Migrations
-
-### Step-by-Step Guide
-
-When you need to make breaking changes to the persisted schema:
-
-#### 1. Update the Version Number
-
-```typescript
-// In src/store/useStore.ts
-{
-  name: 'db-mapper-storage',
-  version: 2,  // Increment from 1 to 2
-  // ...
-}
-```
-
-#### 2. Add Migration Case
-
-```typescript
-migrate: (persistedState: any, version: number) => {
-  // Existing migration v0 → v1
-  if (version === 0) {
-    const state = persistedState as { /* ... */ };
-    // ... migration logic ...
-    persistedState = { ...state, edges: migratedEdges };
+```ts
+migrate: (persistedState: unknown, version: number): PersistedShape => {
+  try {
+    return runMigrations(assertPersistedShape(persistedState), version);
+  } catch (error) {
+    // Stash the raw blob under CORRUPT_BACKUP_KEY and start empty rather than
+    // leaving the app wedged on state it cannot load.
   }
-
-  // NEW: Migration v1 → v2
-  if (version < 2) {
-    // Your migration logic here
-    const state = persistedState as {
-      nodes: DBNode[];
-      edges: DBEdge[];
-      theme: 'light' | 'dark' | 'system';
-    };
-
-    // Example: Add new field to nodes
-    const migratedNodes = state.nodes.map(node => ({
-      ...node,
-      data: {
-        ...node.data,
-        newField: 'default value',
-      },
-    }));
-
-    persistedState = {
-      ...state,
-      nodes: migratedNodes,
-    };
-  }
-
-  return persistedState;
-},
-```
-
-#### 3. Update Type Definitions
-
-Add the new field to your TypeScript types in `src/types/index.ts`:
-
-```typescript
-export interface YourNodeData {
-  // ... existing fields ...
-  newField?: string; // Add new field
 }
 ```
 
-#### 4. Update This Documentation
+A diagram that fails to migrate is never silently discarded — the original JSON is copied to `db-mapper-storage-backup` first.
 
-Add a new section under "Version History" documenting:
-- What changed
-- Why the migration was needed
-- What the migration does
-- Any special considerations
+## Migrations must chain
 
-#### 5. Test the Migration
+This is the one rule that matters, and the one that was previously broken.
 
-**Test with old data**:
-1. Clear localStorage: `localStorage.removeItem('db-mapper-storage')`
-2. Create test data in the old schema format
-3. Manually set it in localStorage
-4. Reload the app
-5. Verify migration runs and data is correct
-
-**Test with current data**:
-1. Verify existing users (already on latest version) aren't affected
-2. Confirm no unnecessary migrations run
-
-### Migration Best Practices
-
-✅ **DO**:
-- Use `version < 2` instead of `version === 1` to handle skipped versions
-- Document why the migration is needed
-- Test with real-world old data before releasing
-- Keep migrations simple and focused
-- Add comprehensive comments explaining the logic
-- Preserve user data - never delete without good reason
-
-❌ **DON'T**:
-- Remove old migration code (users might skip versions)
-- Mutate `persistedState` directly (use immutable updates)
-- Make migrations dependent on application state
-- Forget to update TypeScript types
-- Deploy without testing the migration path
-
-### Migration Chaining
-
-Users can skip multiple versions (e.g., v0 → v3). Migrations must chain correctly:
-
-```typescript
-migrate: (persistedState: any, version: number) => {
-  let state = persistedState;
-
-  // Chain migrations in order
-  if (version < 1) {
-    state = migrateV0ToV1(state);
-  }
-
-  if (version < 2) {
-    state = migrateV1ToV2(state);
-  }
-
-  if (version < 3) {
-    state = migrateV2ToV3(state);
-  }
-
-  return state;
+```ts
+export function runMigrations(persisted: LegacyPersistedShape, version: number): PersistedShape {
+  let legacy = persisted;
+  if (version < 1) legacy = migrateV0toV1(legacy);
+  if (version < 2) legacy = migrateV1toV2(legacy);
+  if (version < 3) return migrateV2toV3(legacy);   // terminal: changes the shape
+  return legacy as unknown as PersistedShape;
 }
 ```
 
-This ensures users on v0 will go through all migrations (v0→v1→v2→v3) automatically.
+Use `version < n`, never `version === n`. An earlier implementation used `if (version === 0) return migrateV0toV1(state)`, which upgraded v0 data to v1 and returned it immediately — so anyone who hadn't opened the app since v0 never received the v1→v2 step. `runMigrations` is covered by a test asserting v0 data arrives with *both* `isNoteLink` and `pattern` set.
 
-### Helper Functions
+Each migration takes and returns a whole `PersistedShape`, updates immutably, and is idempotent where it cheaply can be (all of them skip fields that are already set, so re-running is harmless).
 
-For complex migrations, extract logic into helper functions:
+## Version history
 
-```typescript
-/**
- * Migrates edges from v0 to v1 by adding isNoteLink field
- */
-const migrateEdgesToV1 = (state: any) => {
-  const edges = state.edges.map((edge: DBEdge) => {
-    if (edge.data?.isNoteLink !== undefined) return edge;
+### v0 — original, untracked
 
-    const sourceNode = state.nodes.find(n => n.id === edge.source);
-    const targetNode = state.nodes.find(n => n.id === edge.target);
-    const isNoteLink = sourceNode?.data.type === 'note' ||
-                       targetNode?.data.type === 'note';
+`{ nodes, edges, theme }` with no version field. `RelationshipEdgeData` had no `isNoteLink`.
 
-    return { ...edge, data: { ...edge.data, isNoteLink } };
-  });
+### v1 — `isNoteLink` on edges
 
-  return { ...state, edges };
-};
+`RelationshipEdge` used to look its source and target nodes up from the store on every render to decide whether it was a note link. That read raced with node updates during drag and selection, so edges randomly disappeared. The flag is now computed once, when the edge is created, and stored on the edge.
 
-// Then use in migrate function:
-if (version < 1) {
-  state = migrateEdgesToV1(state);
-}
+`migrateV0toV1` backfills it by looking up each edge's endpoints and setting `isNoteLink = source is a note || target is a note`.
+
+### v2 — `pattern` on edges
+
+Edge line patterns became user-editable. v1 hard-coded a dashed stroke for note links, so `migrateV1toV2` writes `pattern: 'dashed'` onto existing note links to preserve their appearance. Table relationships are left without a pattern and render solid.
+
+### v3 — our own schema, off React Flow's
+
+The largest migration so far, and the only one that changes the *shape* of a node or edge rather than adding a field. It is therefore the terminal step in the chain: `migrateV2toV3` takes the legacy (React Flow) shape and returns the current one.
+
+**Nodes** gain flat, explicit geometry:
+
+```
+{ position: {x,y}, style: {width,height}, measured, ... }   ->   { x, y, w, h }
 ```
 
-## Troubleshooting
+Every React Flow runtime field is dropped rather than carried forward — `measured`, `dragging`, `positionAbsolute`, `handles`, `extent`, `style`, and `selected` (which should never have been persisted; selection now lives in `selectedNodeIds`, outside the nodes). `zIndex` becomes `z`.
 
-### Migration Not Running
+Table heights are **recomputed** from the column count via `intrinsicTableHeight` rather than trusting the stored value, which was a stale DOM measurement. Tables auto-size vertically from v3 on: a table that could scroll internally could hide a column, and a hidden column has no on-screen port for an edge to attach to.
 
-**Check**:
-- Is the version number incremented in the persist config?
-- Is localStorage populated with old data?
-- Are you testing in the same browser/domain?
+**Edges** gain structured endpoints. v2 encoded the column into a React Flow handle id and duplicated it onto `data`:
 
-**Debug**:
-```javascript
-// Add console.log in migrate function
-migrate: (persistedState, version) => {
-  console.log('Migration running from version:', version);
-  // ...
-}
+```
+{ source: 'orders', sourceHandle: 'user_id-right', data: { sourceColumn: 'user_id' } }
+   ->
+{ source: { nodeId: 'orders', columnId: 'user_id', side: 'right' } }
 ```
 
-### Data Loss After Migration
+`parseLegacyHandle` does the string parsing, falling back to `data.sourceColumn` for very old edges that recorded the column only there. The duplicated `data.sourceColumn`/`targetColumn` are dropped — the endpoint is now the single source of truth. `parseLegacyHandle` stays exported because the file importer still needs it.
 
-**Check**:
-- Are you returning the full state object?
-- Did you preserve all existing fields?
-- Are you using immutable updates?
+**`Column.foreignKey` is backfilled.** The field has been in the types since the beginning and `TableNode` renders an FK badge from it, but nothing ever wrote it, so the badge never appeared. The edges already held the information, so the migration derives it. From v3 on, `syncForeignKeys` in the store keeps it in step as edges are created, rewired and deleted.
 
-**Rollback**:
-Users can restore old data from localStorage backups if needed.
+## Adding a migration
 
-### TypeScript Errors
+1. Write `migrateVNtoVN1(state: PersistedShape): PersistedShape` in `src/store/migrations.ts`. Pure function, immutable updates, skip anything already set.
+2. Add `if (version < N+1) state = migrateVNtoVN1(state);` to `runMigrations`, in order.
+3. Bump `CURRENT_SCHEMA_VERSION`.
+4. Update the types in `src/types/index.ts`.
+5. Add tests to `src/store/migrations.test.ts` — at minimum: the step itself, the full chain from v0, and idempotency.
+6. Add a section to the version history above.
 
-**Common Issues**:
-- Type mismatch between old and new schema
-- Missing optional field markers (`?`)
-- Type assertions needed for old data
+Never delete an old migration. Someone's browser still has v0 data in it.
 
-**Solution**:
-Use `any` for `persistedState` parameter and type-cast within migration:
-```typescript
-const state = persistedState as OldSchemaType;
+## Testing against real old data
+
+The unit tests cover the logic. To exercise the whole path end to end in a browser:
+
+```js
+localStorage.setItem('db-mapper-storage', JSON.stringify({
+  state: { nodes: [/* ... */], edges: [/* ... */], theme: 'system' },
+  version: 0,
+}));
 ```
 
-## Related Files
-
-- `src/store/useStore.ts` - Migration configuration
-- `src/types/index.ts` - Type definitions
-- `src/components/edges/RelationshipEdge.tsx` - Uses migrated data
-- `docs/MIGRATIONS.md` - This file
-
-## Additional Resources
-
-- [Zustand Persist Middleware Docs](https://docs.pmnd.rs/zustand/integrations/persisting-store-data)
-- [Zustand Migration Guide](https://github.com/pmndrs/zustand/blob/main/docs/integrations/persisting-store-data.md#migrations)
+Reload, then confirm the diagram renders and `JSON.parse(localStorage['db-mapper-storage']).version === 2`.

@@ -1,5 +1,3 @@
-import { Node, Edge } from '@xyflow/react';
-
 // Column data types for SQL databases
 export type ColumnDataType =
   | 'INT' | 'BIGINT' | 'SMALLINT' | 'TINYINT'
@@ -14,6 +12,9 @@ export type ColumnDataType =
 // Cardinality types for relationships
 export type Cardinality = 'one-to-one' | 'one-to-many' | 'many-to-many';
 
+/** Which edge of a node an edge endpoint attaches to. */
+export type Side = 'left' | 'right' | 'top' | 'bottom';
+
 // Column definition
 export interface Column {
   id: string;
@@ -26,6 +27,11 @@ export interface Column {
   autoIncrement: boolean;
   defaultValue?: string;
   comment?: string;
+  /**
+   * Derived from the relationship edges, not authored directly. The store keeps
+   * this in sync whenever an edge is created, rewired or deleted; it exists so a
+   * table can render its FK badges without walking the edge list.
+   */
   foreignKey?: {
     tableId: string;
     columnId: string;
@@ -39,7 +45,6 @@ export interface TableNodeData {
   columns: Column[];
   color?: string;
   comment?: string;
-  [key: string]: unknown;
 }
 
 // Group node data (for grouping tables)
@@ -47,7 +52,6 @@ export interface GroupNodeData {
   type: 'group';
   name: string;
   color?: string;
-  [key: string]: unknown;
 }
 
 // Note/Comment node data
@@ -56,38 +60,96 @@ export interface NoteNodeData {
   name: string;
   content: string;
   color?: string;
-  [key: string]: unknown;
 }
 
 // Union type for all node data
 export type DBNodeData = TableNodeData | GroupNodeData | NoteNodeData;
 
-// Typed nodes
-export type TableNode = Node<TableNodeData, 'table'>;
-export type GroupNode = Node<GroupNodeData, 'group'>;
-export type NoteNode = Node<NoteNodeData, 'note'>;
+export type NodeKind = 'table' | 'group' | 'note';
+
+/**
+ * A node on the canvas.
+ *
+ * Geometry is stored flat and explicitly. Under React Flow this was spread across
+ * `position`, `style.width/height` and a `measured` field the library wrote after
+ * layout, which meant a node's real size was only knowable after it had been
+ * rendered. Here `x/y/w/h` are always populated and always authoritative, so
+ * routing, hit-testing and layout can run without a DOM.
+ */
+export interface BaseNode<K extends NodeKind, D> {
+  id: string;
+  type: K;
+  data: D;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Paint order: groups 0, tables 1, notes 2. */
+  z: number;
+  /** Group containment. */
+  parentId?: string;
+}
+
+export type TableNode = BaseNode<'table', TableNodeData>;
+export type GroupNode = BaseNode<'group', GroupNodeData>;
+export type NoteNode = BaseNode<'note', NoteNodeData>;
 export type DBNode = TableNode | GroupNode | NoteNode;
+
+/**
+ * One end of a relationship.
+ *
+ * Replaces React Flow's `source`/`sourceHandle` string pair, where the column was
+ * encoded into a handle id like `"<columnId>-right"` and had to be parsed back out.
+ *
+ * `columnId` absent means the edge attaches to the node as a whole (notes, and
+ * table-level links). `side` absent means the router picks the side that produces
+ * the best path — which is the normal case; it is only pinned when the user
+ * explicitly drags to a particular side.
+ */
+export interface EndpointRef {
+  nodeId: string;
+  columnId?: string;
+  side?: Side;
+}
 
 // Edge/Relationship data
 export interface RelationshipEdgeData {
   type: 'relationship';
   cardinality?: Cardinality;
   label?: string;
-  sourceColumn?: string;
-  targetColumn?: string;
-  isNoteLink?: boolean; // Flag to indicate if edge connects to a note node
-  color?: 'slate' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink'; // Edge color from preset palette
-  pattern?: 'solid' | 'dashed' | 'dotted' | 'dash-dot'; // Edge line pattern
-  [key: string]: unknown;
+  /** Cached at creation: looking this up per-render used to race with node updates. */
+  isNoteLink?: boolean;
+  color?: 'slate' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink';
+  pattern?: 'solid' | 'dashed' | 'dotted' | 'dash-dot';
 }
 
-export type DBEdge = Edge<RelationshipEdgeData>;
+export interface DBEdge {
+  id: string;
+  source: EndpointRef;
+  target: EndpointRef;
+  /**
+   * Points the route must pass through, pinned by dragging the line.
+   *
+   * The router still avoids obstacles *between* them, so a nudged edge stays
+   * sensible when tables move — unlike a fully manual path, which goes stale the
+   * moment anything shifts.
+   */
+  waypoints?: { x: number; y: number }[];
+  data: RelationshipEdgeData;
+}
 
-// Application state for save/load
+/**
+ * Serialised diagram, as written to a `.json` file.
+ *
+ * Deliberately no viewport: the camera lives in `ViewportController`, outside
+ * React and outside the store, so nothing here could populate it. The field
+ * existed and was never once written — restoring the camera on load would mean
+ * plumbing it through `CanvasApi`, which is a feature rather than a format
+ * detail.
+ */
 export interface DiagramState {
   nodes: DBNode[];
   edges: DBEdge[];
-  viewport?: { x: number; y: number; zoom: number };
 }
 
 // History entry for undo/redo

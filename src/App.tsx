@@ -1,208 +1,40 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ReactFlow,
-  Background,
-  Controls,
-  MiniMap,
-  ReactFlowProvider,
-  useReactFlow,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+import { useCallback, useState } from 'react';
 
-import { useStore } from '@/store';
-import { useShallow } from 'zustand/react/shallow';
-import { nodeTypes } from '@/components/nodes';
-import { edgeTypes } from '@/components/edges';
-import { PRESET_COLORS, DBNode } from '@/types';
-
-// MiniMap node color based on the node's actual color
-const getMiniMapNodeColor = (node: DBNode): string => {
-  const colorName = node.data.color ||
-    (node.data.type === 'note' ? 'yellow' : 'slate');
-  const preset = PRESET_COLORS.find(c => c.name === colorName);
-  return preset?.value || '#64748b';
-};
-
-// MiniMap stroke color for type differentiation
-const getMiniMapNodeStrokeColor = (node: DBNode): string => {
-  switch (node.data.type) {
-    case 'table':
-      return '#475569'; // slate-600 - structured, professional
-    case 'group':
-      return '#94a3b8'; // slate-400 - lighter for containers
-    case 'note':
-      return '#d97706'; // amber-600 - stands out as annotation
-    default:
-      return '#64748b';
-  }
-};
 import { Toolbar } from '@/components/Toolbar';
 import { PropertiesPanel } from '@/components/panels';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { CoordinatesDisplay } from '@/components/CoordinatesDisplay';
 import { GlobalSearch } from '@/components/GlobalSearch';
+import { OutlinePanel } from '@/components/OutlinePanel';
+import { useStore } from '@/store';
+import { ConnectDialog } from '@/components/dialogs/ConnectDialog';
+import { CanvasApiProvider } from '@/components/canvas/CanvasApiProvider';
+import { DiagramCanvas } from '@/components/canvas/DiagramCanvas';
 import { useFileOperations } from '@/hooks/useFileOperations';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
-function Flow() {
-  const {
-    nodes,
-    edges,
-    onNodesChange,
-    onEdgesChange,
-    onConnect,
-    setSelectedNode,
-    setSelectedEdge,
-    clearSelection,
-    deleteSelected,
-    undo,
-    redo,
-    copySelectedNodes,
-    pasteNodes,
-    setSearchOpen,
-  } = useStore(
-    useShallow((state) => ({
-      nodes: state.nodes,
-      edges: state.edges,
-      onNodesChange: state.onNodesChange,
-      onEdgesChange: state.onEdgesChange,
-      onConnect: state.onConnect,
-      setSelectedNode: state.setSelectedNode,
-      setSelectedEdge: state.setSelectedEdge,
-      clearSelection: state.clearSelection,
-      deleteSelected: state.deleteSelected,
-      undo: state.undo,
-      redo: state.redo,
-      copySelectedNodes: state.copySelectedNodes,
-      pasteNodes: state.pasteNodes,
-      setSearchOpen: state.setSearchOpen,
-    }))
-  );
-
-  // Get React Flow instance for viewport operations
-  const { getViewport } = useReactFlow();
-
-  // Handle node selection
-  const onNodeClick = useCallback((_: React.MouseEvent, node: any) => {
-    setSelectedNode(node.id);
-  }, [setSelectedNode]);
-
-  // Handle edge selection
-  const onEdgeClick = useCallback((_: React.MouseEvent, edge: any) => {
-    setSelectedEdge(edge.id);
-  }, [setSelectedEdge]);
-
-  // Handle pane click (deselect)
-  const onPaneClick = useCallback(() => {
-    clearSelection();
-  }, [clearSelection]);
-
-  // Helper to get viewport center position
-  const getViewportCenter = useCallback(() => {
-    const viewport = getViewport();
-    // Calculate center of the visible viewport
-    const centerX = (window.innerWidth / 2 - viewport.x) / viewport.zoom;
-    const centerY = (window.innerHeight / 2 - viewport.y) / viewport.zoom;
-    return { x: centerX, y: centerY };
-  }, [getViewport]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Delete/Backspace - delete selected
-      if ((e.key === 'Delete' || e.key === 'Backspace') && !isInputFocused()) {
-        e.preventDefault();
-        deleteSelected();
-      }
-
-      // Ctrl+Z - undo
-      if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      }
-
-      // Ctrl+Shift+Z or Ctrl+Y - redo
-      if ((e.key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey) ||
-          (e.key === 'y' && (e.ctrlKey || e.metaKey))) {
-        e.preventDefault();
-        redo();
-      }
-
-      // Ctrl+C - copy selected nodes
-      if (e.key === 'c' && (e.ctrlKey || e.metaKey) && !isInputFocused()) {
-        e.preventDefault();
-        copySelectedNodes();
-      }
-
-      // Ctrl+V - paste nodes
-      if (e.key === 'v' && (e.ctrlKey || e.metaKey) && !isInputFocused()) {
-        e.preventDefault();
-        const position = getViewportCenter();
-        pasteNodes(position);
-      }
-
-      // Ctrl+F - open search
-      if (e.key === 'f' && (e.ctrlKey || e.metaKey) && !isInputFocused()) {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [deleteSelected, undo, redo, copySelectedNodes, pasteNodes, getViewportCenter, setSearchOpen]);
-
-  // Memoize static options to prevent unnecessary re-renders
-  const defaultEdgeOptions = useMemo(() => ({
-    type: 'relationship',
-    data: { type: 'relationship', cardinality: 'one-to-many' },
-  }), []);
-
-  const snapGrid = useMemo(() => [15, 15] as [number, number], []);
+/**
+ * Everything inside the canvas API provider.
+ *
+ * Split out so the keyboard shortcuts can reach the camera — paste drops nodes in
+ * the middle of the current view, which only the canvas knows.
+ */
+function Workspace() {
+  useKeyboardShortcuts();
+  const showOutline = useStore((s) => s.showOutline);
 
   return (
     <>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        onEdgeClick={onEdgeClick}
-        onPaneClick={onPaneClick}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        defaultEdgeOptions={defaultEdgeOptions}
-        fitView
-        snapToGrid
-        snapGrid={snapGrid}
-        className="bg-background"
-      >
-        <Background gap={15} size={1} />
-        <Controls />
-        <MiniMap
-          nodeStrokeWidth={2}
-          nodeBorderRadius={2}
-          nodeColor={getMiniMapNodeColor}
-          nodeStrokeColor={getMiniMapNodeStrokeColor}
-          zoomable
-          pannable
-          className="!bg-card border border-border rounded-md shadow-md"
-        />
-        <CoordinatesDisplay />
-      </ReactFlow>
-      <GlobalSearch />
+      <Toolbar />
+      <div className="flex-1 flex overflow-hidden">
+        {showOutline && <OutlinePanel />}
+        <div className="flex-1 relative">
+          <DiagramCanvas />
+          <GlobalSearch />
+        </div>
+        <PropertiesPanel />
+      </div>
+      <ConnectDialog />
     </>
-  );
-}
-
-// Helper to check if input is focused
-function isInputFocused(): boolean {
-  const activeElement = document.activeElement;
-  return (
-    activeElement instanceof HTMLInputElement ||
-    activeElement instanceof HTMLTextAreaElement ||
-    activeElement?.getAttribute('contenteditable') === 'true'
   );
 }
 
@@ -217,37 +49,33 @@ function App() {
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    // Only set dragging to false if we're leaving the container
+    // Only clear when leaving the container itself, not a child.
     if (e.currentTarget === e.target) {
       setIsDragging(false);
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFileDrop(file);
-    }
-  }, [handleFileDrop]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const file = e.dataTransfer.files[0];
+      if (file) handleFileDrop(file);
+    },
+    [handleFileDrop]
+  );
 
   return (
     <ThemeProvider>
-      <ReactFlowProvider>
+      <CanvasApiProvider>
         <div
           className="h-screen w-screen flex flex-col"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <Toolbar />
-          <div className="flex-1 flex overflow-hidden">
-            <div className="flex-1 relative">
-              <Flow />
-            </div>
-            <PropertiesPanel />
-          </div>
+          <Workspace />
+
           {isDragging && (
             <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm border-2 border-dashed border-primary pointer-events-none z-50 flex items-center justify-center">
               <div className="bg-card px-6 py-4 rounded-lg shadow-lg border border-border">
@@ -256,7 +84,7 @@ function App() {
             </div>
           )}
         </div>
-      </ReactFlowProvider>
+      </CanvasApiProvider>
     </ThemeProvider>
   );
 }

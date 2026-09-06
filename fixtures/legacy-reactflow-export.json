@@ -1,0 +1,1886 @@
+{
+  "nodes": [
+    {
+      "id": "g-catalog",
+      "type": "group",
+      "position": {
+        "x": -560,
+        "y": -510
+      },
+      "style": {
+        "width": 800,
+        "height": 1010
+      },
+      "zIndex": 0,
+      "measured": {
+        "width": 800,
+        "height": 1010
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "group",
+        "name": "Catalog",
+        "color": "green"
+      }
+    },
+    {
+      "id": "g-fulfilment",
+      "type": "group",
+      "position": {
+        "x": 340,
+        "y": -560
+      },
+      "style": {
+        "width": 400,
+        "height": 500
+      },
+      "zIndex": 0,
+      "measured": {
+        "width": 400,
+        "height": 500
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "group",
+        "name": "Fulfilment",
+        "color": "orange"
+      }
+    },
+    {
+      "id": "users",
+      "type": "table",
+      "position": {
+        "x": -960,
+        "y": -120
+      },
+      "style": {
+        "width": 222,
+        "height": 282
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 222,
+        "height": 282
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "users",
+        "columns": [
+          {
+            "id": "users.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "users.email",
+            "name": "email",
+            "dataType": "VARCHAR",
+            "length": 255,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": true,
+            "autoIncrement": false
+          },
+          {
+            "id": "users.password_hash",
+            "name": "password_hash",
+            "dataType": "VARCHAR",
+            "length": 255,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "users.full_name",
+            "name": "full_name",
+            "dataType": "VARCHAR",
+            "length": 120,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "users.phone",
+            "name": "phone",
+            "dataType": "VARCHAR",
+            "length": 32,
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "users.is_active",
+            "name": "is_active",
+            "dataType": "BOOLEAN",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "users.created_at",
+            "name": "created_at",
+            "dataType": "TIMESTAMP",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "users.updated_at",
+            "name": "updated_at",
+            "dataType": "TIMESTAMP",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "blue",
+        "comment": "Registered customers and staff"
+      }
+    },
+    {
+      "id": "addresses",
+      "type": "table",
+      "position": {
+        "x": -960,
+        "y": 260
+      },
+      "style": {
+        "width": 220,
+        "height": 292
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 220,
+        "height": 292
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "addresses",
+        "columns": [
+          {
+            "id": "addresses.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "addresses.user_id",
+            "name": "user_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "addresses.line1",
+            "name": "line1",
+            "dataType": "VARCHAR",
+            "length": 200,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "addresses.line2",
+            "name": "line2",
+            "dataType": "VARCHAR",
+            "length": 200,
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "addresses.city",
+            "name": "city",
+            "dataType": "VARCHAR",
+            "length": 100,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "addresses.region",
+            "name": "region",
+            "dataType": "VARCHAR",
+            "length": 100,
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "addresses.postal_code",
+            "name": "postal_code",
+            "dataType": "VARCHAR",
+            "length": 20,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "addresses.country",
+            "name": "country",
+            "dataType": "CHAR",
+            "length": 2,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "addresses.is_default",
+            "name": "is_default",
+            "dataType": "BOOLEAN",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "blue"
+      }
+    },
+    {
+      "id": "categories",
+      "type": "table",
+      "position": {
+        "x": -480,
+        "y": -420
+      },
+      "style": {
+        "width": 220,
+        "height": 198
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 220,
+        "height": 198
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "categories",
+        "columns": [
+          {
+            "id": "categories.id",
+            "name": "id",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "categories.parent_id",
+            "name": "parent_id",
+            "dataType": "INT",
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "categories.name",
+            "name": "name",
+            "dataType": "VARCHAR",
+            "length": 120,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "categories.slug",
+            "name": "slug",
+            "dataType": "VARCHAR",
+            "length": 140,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": true,
+            "autoIncrement": false
+          },
+          {
+            "id": "categories.position",
+            "name": "position",
+            "dataType": "SMALLINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "green",
+        "comment": "Self-referencing tree"
+      }
+    },
+    {
+      "id": "products",
+      "type": "table",
+      "position": {
+        "x": -480,
+        "y": -120
+      },
+      "style": {
+        "width": 220,
+        "height": 310
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 220,
+        "height": 310
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "products",
+        "columns": [
+          {
+            "id": "products.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "products.category_id",
+            "name": "category_id",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "products.sku",
+            "name": "sku",
+            "dataType": "VARCHAR",
+            "length": 64,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": true,
+            "autoIncrement": false
+          },
+          {
+            "id": "products.name",
+            "name": "name",
+            "dataType": "VARCHAR",
+            "length": 200,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "products.description",
+            "name": "description",
+            "dataType": "TEXT",
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "products.price",
+            "name": "price",
+            "dataType": "DECIMAL",
+            "length": 10,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "products.cost",
+            "name": "cost",
+            "dataType": "DECIMAL",
+            "length": 10,
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "products.is_active",
+            "name": "is_active",
+            "dataType": "BOOLEAN",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "products.created_at",
+            "name": "created_at",
+            "dataType": "TIMESTAMP",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "green",
+        "comment": "One row per sellable item"
+      }
+    },
+    {
+      "id": "product_images",
+      "type": "table",
+      "position": {
+        "x": -480,
+        "y": 320
+      },
+      "style": {
+        "width": 220,
+        "height": 180
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 220,
+        "height": 180
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "product_images",
+        "columns": [
+          {
+            "id": "product_images.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "product_images.product_id",
+            "name": "product_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "product_images.url",
+            "name": "url",
+            "dataType": "VARCHAR",
+            "length": 500,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "product_images.alt_text",
+            "name": "alt_text",
+            "dataType": "VARCHAR",
+            "length": 200,
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "product_images.position",
+            "name": "position",
+            "dataType": "SMALLINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "green"
+      }
+    },
+    {
+      "id": "product_variants",
+      "type": "table",
+      "position": {
+        "x": -40,
+        "y": -120
+      },
+      "style": {
+        "width": 220,
+        "height": 208
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 220,
+        "height": 208
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "product_variants",
+        "columns": [
+          {
+            "id": "product_variants.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "product_variants.product_id",
+            "name": "product_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "product_variants.sku",
+            "name": "sku",
+            "dataType": "VARCHAR",
+            "length": 64,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": true,
+            "autoIncrement": false
+          },
+          {
+            "id": "product_variants.name",
+            "name": "name",
+            "dataType": "VARCHAR",
+            "length": 120,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "product_variants.price_delta",
+            "name": "price_delta",
+            "dataType": "DECIMAL",
+            "length": 10,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "product_variants.barcode",
+            "name": "barcode",
+            "dataType": "VARCHAR",
+            "length": 64,
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "green"
+      }
+    },
+    {
+      "id": "warehouses",
+      "type": "table",
+      "position": {
+        "x": 460,
+        "y": -480
+      },
+      "style": {
+        "width": 220,
+        "height": 152
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 220,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "warehouses",
+        "columns": [
+          {
+            "id": "warehouses.id",
+            "name": "id",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "warehouses.code",
+            "name": "code",
+            "dataType": "VARCHAR",
+            "length": 16,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": true,
+            "autoIncrement": false
+          },
+          {
+            "id": "warehouses.name",
+            "name": "name",
+            "dataType": "VARCHAR",
+            "length": 120,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "warehouses.address_id",
+            "name": "address_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "orange"
+      }
+    },
+    {
+      "id": "inventory",
+      "type": "table",
+      "position": {
+        "x": 420,
+        "y": -180
+      },
+      "style": {
+        "width": 268,
+        "height": 226
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 268,
+        "height": 226
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "inventory",
+        "columns": [
+          {
+            "id": "inventory.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "inventory.variant_id",
+            "name": "variant_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "inventory.warehouse_id",
+            "name": "warehouse_id",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "inventory.quantity",
+            "name": "quantity",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "inventory.reserved",
+            "name": "reserved",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "inventory.updated_at",
+            "name": "updated_at",
+            "dataType": "TIMESTAMP",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "orange",
+        "comment": "Stock level per variant per warehouse"
+      }
+    },
+    {
+      "id": "shipments",
+      "type": "table",
+      "position": {
+        "x": 940,
+        "y": 200
+      },
+      "style": {
+        "width": 244,
+        "height": 236
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 244,
+        "height": 236
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "shipments",
+        "columns": [
+          {
+            "id": "shipments.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "shipments.order_id",
+            "name": "order_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "shipments.warehouse_id",
+            "name": "warehouse_id",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "shipments.carrier",
+            "name": "carrier",
+            "dataType": "VARCHAR",
+            "length": 60,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "shipments.tracking_number",
+            "name": "tracking_number",
+            "dataType": "VARCHAR",
+            "length": 80,
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "shipments.shipped_at",
+            "name": "shipped_at",
+            "dataType": "TIMESTAMP",
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "shipments.delivered_at",
+            "name": "delivered_at",
+            "dataType": "TIMESTAMP",
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "purple"
+      }
+    },
+    {
+      "id": "orders",
+      "type": "table",
+      "position": {
+        "x": 420,
+        "y": 200
+      },
+      "style": {
+        "width": 228,
+        "height": 338
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 228,
+        "height": 338
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "orders",
+        "columns": [
+          {
+            "id": "orders.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "orders.user_id",
+            "name": "user_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "orders.shipping_address_id",
+            "name": "shipping_address_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "orders.billing_address_id",
+            "name": "billing_address_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "orders.status",
+            "name": "status",
+            "dataType": "VARCHAR",
+            "length": 24,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "orders.subtotal",
+            "name": "subtotal",
+            "dataType": "DECIMAL",
+            "length": 12,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "orders.tax",
+            "name": "tax",
+            "dataType": "DECIMAL",
+            "length": 12,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "orders.shipping",
+            "name": "shipping",
+            "dataType": "DECIMAL",
+            "length": 12,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "orders.total",
+            "name": "total",
+            "dataType": "DECIMAL",
+            "length": 12,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "orders.placed_at",
+            "name": "placed_at",
+            "dataType": "TIMESTAMP",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "red",
+        "comment": "Placed orders, any status"
+      }
+    },
+    {
+      "id": "order_items",
+      "type": "table",
+      "position": {
+        "x": -40,
+        "y": 320
+      },
+      "style": {
+        "width": 220,
+        "height": 208
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 220,
+        "height": 208
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "order_items",
+        "columns": [
+          {
+            "id": "order_items.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "order_items.order_id",
+            "name": "order_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "order_items.variant_id",
+            "name": "variant_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "order_items.quantity",
+            "name": "quantity",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "order_items.unit_price",
+            "name": "unit_price",
+            "dataType": "DECIMAL",
+            "length": 10,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "order_items.line_total",
+            "name": "line_total",
+            "dataType": "DECIMAL",
+            "length": 12,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "red"
+      }
+    },
+    {
+      "id": "payments",
+      "type": "table",
+      "position": {
+        "x": 940,
+        "y": -140
+      },
+      "style": {
+        "width": 262,
+        "height": 236
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 262,
+        "height": 236
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "payments",
+        "columns": [
+          {
+            "id": "payments.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "payments.order_id",
+            "name": "order_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "payments.method",
+            "name": "method",
+            "dataType": "VARCHAR",
+            "length": 32,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "payments.amount",
+            "name": "amount",
+            "dataType": "DECIMAL",
+            "length": 12,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "payments.status",
+            "name": "status",
+            "dataType": "VARCHAR",
+            "length": 24,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "payments.transaction_ref",
+            "name": "transaction_ref",
+            "dataType": "VARCHAR",
+            "length": 120,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": true,
+            "autoIncrement": false
+          },
+          {
+            "id": "payments.processed_at",
+            "name": "processed_at",
+            "dataType": "TIMESTAMP",
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "purple"
+      }
+    },
+    {
+      "id": "reviews",
+      "type": "table",
+      "position": {
+        "x": -960,
+        "y": 700
+      },
+      "style": {
+        "width": 220,
+        "height": 236
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 220,
+        "height": 236
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "reviews",
+        "columns": [
+          {
+            "id": "reviews.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "reviews.product_id",
+            "name": "product_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "reviews.user_id",
+            "name": "user_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "reviews.rating",
+            "name": "rating",
+            "dataType": "SMALLINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "reviews.title",
+            "name": "title",
+            "dataType": "VARCHAR",
+            "length": 160,
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "reviews.body",
+            "name": "body",
+            "dataType": "TEXT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "reviews.created_at",
+            "name": "created_at",
+            "dataType": "TIMESTAMP",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "yellow"
+      }
+    },
+    {
+      "id": "cart_items",
+      "type": "table",
+      "position": {
+        "x": -440,
+        "y": 700
+      },
+      "style": {
+        "width": 220,
+        "height": 180
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 220,
+        "height": 180
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "cart_items",
+        "columns": [
+          {
+            "id": "cart_items.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "cart_items.user_id",
+            "name": "user_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "cart_items.variant_id",
+            "name": "variant_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "cart_items.quantity",
+            "name": "quantity",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "cart_items.added_at",
+            "name": "added_at",
+            "dataType": "TIMESTAMP",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "pink"
+      }
+    },
+    {
+      "id": "coupons",
+      "type": "table",
+      "position": {
+        "x": 480,
+        "y": 700
+      },
+      "style": {
+        "width": 222,
+        "height": 236
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 222,
+        "height": 236
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "coupons",
+        "columns": [
+          {
+            "id": "coupons.id",
+            "name": "id",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "coupons.code",
+            "name": "code",
+            "dataType": "VARCHAR",
+            "length": 40,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": true,
+            "autoIncrement": false
+          },
+          {
+            "id": "coupons.discount_type",
+            "name": "discount_type",
+            "dataType": "VARCHAR",
+            "length": 16,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "coupons.discount_value",
+            "name": "discount_value",
+            "dataType": "DECIMAL",
+            "length": 10,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "coupons.valid_from",
+            "name": "valid_from",
+            "dataType": "DATE",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "coupons.valid_until",
+            "name": "valid_until",
+            "dataType": "DATE",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "coupons.max_uses",
+            "name": "max_uses",
+            "dataType": "INT",
+            "nullable": true,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "slate"
+      }
+    },
+    {
+      "id": "order_coupons",
+      "type": "table",
+      "position": {
+        "x": 940,
+        "y": 700
+      },
+      "style": {
+        "width": 222,
+        "height": 152
+      },
+      "zIndex": 1,
+      "measured": {
+        "width": 222,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "table",
+        "name": "order_coupons",
+        "columns": [
+          {
+            "id": "order_coupons.id",
+            "name": "id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true,
+            "autoIncrement": true
+          },
+          {
+            "id": "order_coupons.order_id",
+            "name": "order_id",
+            "dataType": "BIGINT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "order_coupons.coupon_id",
+            "name": "coupon_id",
+            "dataType": "INT",
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          },
+          {
+            "id": "order_coupons.amount_applied",
+            "name": "amount_applied",
+            "dataType": "DECIMAL",
+            "length": 10,
+            "nullable": false,
+            "primaryKey": false,
+            "unique": false,
+            "autoIncrement": false
+          }
+        ],
+        "color": "slate"
+      }
+    },
+    {
+      "id": "n-money",
+      "type": "note",
+      "position": {
+        "x": 940,
+        "y": 440
+      },
+      "style": {
+        "width": 280,
+        "height": 130
+      },
+      "zIndex": 2,
+      "measured": {
+        "width": 280,
+        "height": 130
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "note",
+        "name": "Money columns",
+        "content": "All amounts are DECIMAL, never FLOAT. Stored in the order currency; conversion happens at read time.",
+        "color": "purple"
+      }
+    },
+    {
+      "id": "n-inventory",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": -520
+      },
+      "style": {
+        "width": 260,
+        "height": 120
+      },
+      "zIndex": 2,
+      "measured": {
+        "width": 260,
+        "height": 120
+      },
+      "selected": false,
+      "dragging": false,
+      "data": {
+        "type": "note",
+        "name": "Reserved stock",
+        "content": "`reserved` covers carts and unfulfilled orders. Available = quantity - reserved.",
+        "color": "orange"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e0",
+      "source": "addresses",
+      "target": "users",
+      "sourceHandle": "addresses.user_id-right",
+      "targetHandle": "users.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "sourceColumn": "addresses.user_id",
+        "targetColumn": "users.id"
+      }
+    },
+    {
+      "id": "e1",
+      "source": "categories",
+      "target": "categories",
+      "sourceHandle": "categories.parent_id-right",
+      "targetHandle": "categories.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "label": "parent",
+        "isNoteLink": false,
+        "sourceColumn": "categories.parent_id",
+        "targetColumn": "categories.id"
+      }
+    },
+    {
+      "id": "e2",
+      "source": "products",
+      "target": "categories",
+      "sourceHandle": "products.category_id-right",
+      "targetHandle": "categories.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "sourceColumn": "products.category_id",
+        "targetColumn": "categories.id"
+      }
+    },
+    {
+      "id": "e3",
+      "source": "product_images",
+      "target": "products",
+      "sourceHandle": "product_images.product_id-right",
+      "targetHandle": "products.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "sourceColumn": "product_images.product_id",
+        "targetColumn": "products.id"
+      }
+    },
+    {
+      "id": "e4",
+      "source": "product_variants",
+      "target": "products",
+      "sourceHandle": "product_variants.product_id-right",
+      "targetHandle": "products.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "sourceColumn": "product_variants.product_id",
+        "targetColumn": "products.id"
+      }
+    },
+    {
+      "id": "e5",
+      "source": "inventory",
+      "target": "product_variants",
+      "sourceHandle": "inventory.variant_id-right",
+      "targetHandle": "product_variants.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "sourceColumn": "inventory.variant_id",
+        "targetColumn": "product_variants.id"
+      }
+    },
+    {
+      "id": "e6",
+      "source": "inventory",
+      "target": "warehouses",
+      "sourceHandle": "inventory.warehouse_id-right",
+      "targetHandle": "warehouses.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "color": "orange",
+        "sourceColumn": "inventory.warehouse_id",
+        "targetColumn": "warehouses.id"
+      }
+    },
+    {
+      "id": "e7",
+      "source": "warehouses",
+      "target": "addresses",
+      "sourceHandle": "warehouses.address_id-right",
+      "targetHandle": "addresses.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "color": "orange",
+        "pattern": "dashed",
+        "sourceColumn": "warehouses.address_id",
+        "targetColumn": "addresses.id"
+      }
+    },
+    {
+      "id": "e8",
+      "source": "orders",
+      "target": "users",
+      "sourceHandle": "orders.user_id-right",
+      "targetHandle": "users.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "color": "red",
+        "sourceColumn": "orders.user_id",
+        "targetColumn": "users.id"
+      }
+    },
+    {
+      "id": "e9",
+      "source": "orders",
+      "target": "addresses",
+      "sourceHandle": "orders.shipping_address_id-right",
+      "targetHandle": "addresses.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "label": "ship to",
+        "isNoteLink": false,
+        "color": "red",
+        "sourceColumn": "orders.shipping_address_id",
+        "targetColumn": "addresses.id"
+      }
+    },
+    {
+      "id": "e10",
+      "source": "orders",
+      "target": "addresses",
+      "sourceHandle": "orders.billing_address_id-right",
+      "targetHandle": "addresses.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "label": "bill to",
+        "isNoteLink": false,
+        "color": "red",
+        "pattern": "dotted",
+        "sourceColumn": "orders.billing_address_id",
+        "targetColumn": "addresses.id"
+      }
+    },
+    {
+      "id": "e11",
+      "source": "order_items",
+      "target": "orders",
+      "sourceHandle": "order_items.order_id-right",
+      "targetHandle": "orders.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "sourceColumn": "order_items.order_id",
+        "targetColumn": "orders.id"
+      }
+    },
+    {
+      "id": "e12",
+      "source": "order_items",
+      "target": "product_variants",
+      "sourceHandle": "order_items.variant_id-right",
+      "targetHandle": "product_variants.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "sourceColumn": "order_items.variant_id",
+        "targetColumn": "product_variants.id"
+      }
+    },
+    {
+      "id": "e13",
+      "source": "payments",
+      "target": "orders",
+      "sourceHandle": "payments.order_id-right",
+      "targetHandle": "orders.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-one",
+        "isNoteLink": false,
+        "color": "purple",
+        "sourceColumn": "payments.order_id",
+        "targetColumn": "orders.id"
+      }
+    },
+    {
+      "id": "e14",
+      "source": "shipments",
+      "target": "orders",
+      "sourceHandle": "shipments.order_id-right",
+      "targetHandle": "orders.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "color": "purple",
+        "sourceColumn": "shipments.order_id",
+        "targetColumn": "orders.id"
+      }
+    },
+    {
+      "id": "e15",
+      "source": "shipments",
+      "target": "warehouses",
+      "sourceHandle": "shipments.warehouse_id-right",
+      "targetHandle": "warehouses.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "color": "purple",
+        "pattern": "dash-dot",
+        "sourceColumn": "shipments.warehouse_id",
+        "targetColumn": "warehouses.id"
+      }
+    },
+    {
+      "id": "e16",
+      "source": "reviews",
+      "target": "products",
+      "sourceHandle": "reviews.product_id-right",
+      "targetHandle": "products.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "color": "yellow",
+        "sourceColumn": "reviews.product_id",
+        "targetColumn": "products.id"
+      }
+    },
+    {
+      "id": "e17",
+      "source": "reviews",
+      "target": "users",
+      "sourceHandle": "reviews.user_id-right",
+      "targetHandle": "users.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "color": "yellow",
+        "sourceColumn": "reviews.user_id",
+        "targetColumn": "users.id"
+      }
+    },
+    {
+      "id": "e18",
+      "source": "cart_items",
+      "target": "users",
+      "sourceHandle": "cart_items.user_id-right",
+      "targetHandle": "users.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "color": "pink",
+        "sourceColumn": "cart_items.user_id",
+        "targetColumn": "users.id"
+      }
+    },
+    {
+      "id": "e19",
+      "source": "cart_items",
+      "target": "product_variants",
+      "sourceHandle": "cart_items.variant_id-right",
+      "targetHandle": "product_variants.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "color": "pink",
+        "sourceColumn": "cart_items.variant_id",
+        "targetColumn": "product_variants.id"
+      }
+    },
+    {
+      "id": "e20",
+      "source": "order_coupons",
+      "target": "orders",
+      "sourceHandle": "order_coupons.order_id-right",
+      "targetHandle": "orders.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "one-to-many",
+        "isNoteLink": false,
+        "sourceColumn": "order_coupons.order_id",
+        "targetColumn": "orders.id"
+      }
+    },
+    {
+      "id": "e21",
+      "source": "order_coupons",
+      "target": "coupons",
+      "sourceHandle": "order_coupons.coupon_id-right",
+      "targetHandle": "coupons.id-left",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "cardinality": "many-to-many",
+        "isNoteLink": false,
+        "sourceColumn": "order_coupons.coupon_id",
+        "targetColumn": "coupons.id"
+      }
+    },
+    {
+      "id": "e-note-1",
+      "source": "n-money",
+      "target": "payments",
+      "sourceHandle": "bottom",
+      "targetHandle": "top",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "isNoteLink": true,
+        "pattern": "dashed"
+      }
+    },
+    {
+      "id": "e-note-2",
+      "source": "n-inventory",
+      "target": "inventory",
+      "sourceHandle": "bottom",
+      "targetHandle": "top",
+      "type": "relationship",
+      "data": {
+        "type": "relationship",
+        "isNoteLink": true,
+        "pattern": "dashed"
+      }
+    }
+  ]
+}

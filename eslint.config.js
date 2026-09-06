@@ -23,6 +23,24 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      // A leading underscore marks a parameter that is deliberately unused —
+      // reserved slots in an interface a later implementation will need.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
+  {
+    // Test files legitimately reach for non-null assertions on fixtures they
+    // just constructed; requiring a guard there adds noise, not safety.
+    files: ['**/*.{test,spec}.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
 )

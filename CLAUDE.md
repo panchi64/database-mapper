@@ -1,271 +1,120 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) working in this repository.
 
-## Project Overview
+## Project
 
-DB Mapper is a visual database schema designer built with React and TypeScript. Users can create database diagrams with tables, relationships, groups, and notes. All data persists to localStorage with JSON export/import support.
+DB Mapper is a visual database schema designer. Tables, relationships, groups and
+notes on an infinite canvas, persisted to localStorage, with JSON and SQL
+import/export. It builds to **one self-contained HTML file**.
 
-## Development Commands
+The diagram is drawn by a **custom canvas engine** in `src/engine/`, not by a
+library. That engine is the centre of gravity of this codebase — read
+`src/engine/CLAUDE.md` before touching anything that draws, routes or hit-tests.
+
+## Commands
 
 ```bash
-bun dev      # Start Vite dev server
-bun run build    # TypeScript check + production build
-bun run lint     # Run ESLint
-bun run preview  # Preview production build
+bun dev          # Vite dev server
+bun run build    # typecheck + build + bundle-size check
+bun run lint     # ESLint
+bun run test     # Vitest
+bun run coverage # Vitest with coverage
+bun run fixtures # regenerate fixtures/ (see fixtures/README.md)
+bun run scripts/route-perf.ts   # edge routing against the perf budget
 ```
+
+`bun run build` fails if `dist/index.html` exceeds the budget in
+`scripts/check-bundle-size.ts`. That is deliberate: the single-file property is
+easy to erode by accident.
 
 ## Architecture
 
 ```
-App.tsx
-  └─ ThemeProvider (theme context)
-      └─ ReactFlowProvider
-          ├─ Toolbar (top bar controls)
-          ├─ GlobalSearch (inline search bar, Ctrl+F)
-          ├─ ReactFlow canvas (nodes + edges)
-          │   ├─ Background, Controls, MiniMap
-          │   └─ CoordinatesDisplay
-          └─ PropertiesPanel (right sidebar editor)
+App
+ └─ ThemeProvider
+     └─ CanvasApiProvider          camera access for components outside the canvas
+         ├─ Toolbar
+         ├─ OutlinePanel           DOM tree of the diagram (a11y + navigation)
+         ├─ DiagramCanvas          the canvas surface
+         │   ├─ useCanvasEngine    renderer, interactions, viewport
+         │   ├─ CanvasContextMenu  one Radix trigger for the whole canvas
+         │   ├─ CanvasControls / CanvasMinimap / NotationLegend
+         │   └─ InlineEditor       a real <input> floated over the canvas
+         ├─ GlobalSearch
+         ├─ ConnectDialog          click-to-connect picker
+         └─ PropertiesPanel
 ```
 
-### Data Flow
+### Layers
 
-1. **Zustand store** (`src/store/useStore.ts`) is the single source of truth
-2. Components read state via selectors and dispatch actions
-3. Store persists to localStorage automatically (key: `db-mapper-storage`)
-4. React Flow manages canvas viewport and interactions
-5. History uses `structuredClone()` for deep copies (max 50 entries)
+| Layer | Location | Depends on |
+|---|---|---|
+| Types | `src/types/` | nothing |
+| Engine | `src/engine/` | types only |
+| Store | `src/store/` | types, engine |
+| Components | `src/components/` | all of the above |
 
-### Key Directories
+The engine never imports from `src/components/` or `src/store/`, and only ever
+imports *types* from `@/types`. That is what lets routing, layout and SQL run in a
+plain Node test with no DOM.
 
-- `src/components/nodes/` - Table, Group, Note node renderers (all memoized)
-- `src/components/edges/` - RelationshipEdge with crow's foot markers
-- `src/components/panels/` - PropertiesPanel, ColumnEditor, ColorPicker
-- `src/components/dialogs/` - AddTableDialog, ConfirmDialog, KeyboardShortcutsDialog
-- `src/components/ui/` - Radix UI primitives with Tailwind styling
-- `src/store/` - Zustand store with all state and actions
-- `src/types/` - TypeScript type definitions
-- `src/hooks/` - useFileOperations hook
+## Data model
 
-## Technology Stack
+Nodes carry flat, explicit geometry (`x/y/w/h`); edges carry structured endpoints
+(`{nodeId, columnId?, side?}`). See `src/types/CLAUDE.md` for the details and for
+the two rules that catch people out:
 
-- **React Flow** (@xyflow/react 12.x) - Diagram canvas and node/edge rendering
-- **Zustand** (5.x) - State management with persist middleware
-- **Radix UI** - Accessible headless components
-- **Tailwind CSS v4** - Utility-first styling with dark mode
-- **Vite** - Build tool with single-file bundling (viteSingleFile plugin)
+- **Narrow on `node.type`, not `node.data.type`** — only the former narrows `node`.
+- **Table height is derived, never authored** — `intrinsicTableHeight` is the
+  authority, re-applied by the store's `resized()` helper.
 
-## State Management
+`Column.foreignKey` is derived from the edges by `syncForeignKeys`. Never set it
+by hand.
 
-### Store Structure
+## Store
 
-**Persisted state** (localStorage):
-- `nodes: DBNode[]` - All diagram nodes
-- `edges: DBEdge[]` - All relationships
-- `theme: 'light' | 'dark' | 'system'`
+Zustand with persist. Key `db-mapper-storage`, **schema version 3** — see
+`docs/MIGRATIONS.md`, and note the rule that migrations chain with `version < n`.
 
-**Non-persisted state** (resets on reload):
-- `selectedNodeId`, `selectedEdgeId` - Current selection
-- `history[]`, `historyIndex` - Undo/redo stack
-- `searchQuery`, `searchFilter`, `searchResults`, `searchHighlights`, `isSearchOpen` - Global search state
+Persisted: `nodes`, `edges`, `theme`, `showOutline`. Everything else — selection,
+history, search, the connect dialog — is transient by design.
 
-### Action Categories
+Undo/redo is a past/future stack pair around the live document; actions call
+`saveToHistory()` *before* mutating. See `src/store/CLAUDE.md`.
 
-1. **React Flow**: `onNodesChange`, `onEdgesChange`, `onConnect`
-2. **Nodes**: `addTable`, `addGroup`, `addNote`, `updateTable*`, `deleteNode`
-3. **Columns**: `addColumn`, `updateColumn`, `deleteColumn`, `reorderColumns`
-4. **Edges**: `updateEdgeCardinality`, `updateEdgeLabel`, `updateEdgeColumns`, `updateEdgeColor`, `updateEdgePattern`
-5. **Selection**: `setSelectedNode`, `setSelectedEdge`, `clearSelection`
-6. **History**: `saveToHistory`, `undo`, `redo`, `canUndo`, `canRedo`
-7. **File**: `exportDiagram`, `importDiagram`, `clearDiagram`
-8. **Clipboard**: `copySelectedNodes`, `pasteNodes`
-9. **Search**: `setSearchQuery`, `setSearchFilter`, `clearSearch`, `setSearchOpen`
+## Conventions
 
-### Usage Patterns
+- **Bun**, not npm.
+- TypeScript strict; `@/*` maps to `src/*`.
+- A file exporting a component exports *only* components — Fast Refresh needs
+  that. Hooks and contexts go in a sibling `.ts`.
+- Prefer a hand-rolled implementation to a dependency when the dependency is
+  large relative to the whole app. Routing, layout and the SQL reader are all
+  hand-rolled for this reason, and the bundle check enforces the outcome.
+- Tests live beside their subject. Pure logic runs in `node`; anything needing a
+  DOM opts in with a `// @vitest-environment jsdom` docblock.
 
-```typescript
-// Selector pattern - single property
-const nodes = useStore((state) => state.nodes);
+## Testing
 
-// Selector pattern - derived data
-const selectedNode = useStore((state) =>
-  state.nodes.find(n => n.id === state.selectedNodeId)
-);
+`src/test/canvasStub.ts` provides a recording 2D context — jsdom has no canvas
+and we do not want a native `canvas` build in the tree. Assert on *draw commands*
+or on the `Scene` structure, never on pixels.
 
-// Multiple related properties - use useShallow
-const { nodes, edges } = useStore(useShallow((state) => ({
-  nodes: state.nodes,
-  edges: state.edges
-})));
+`fixtures/` holds diagrams for manual verification, validated by
+`src/lib/fixtures.test.ts` so a stale fixture fails the suite rather than looking
+like a rendering bug.
 
-// Action access
-const updateTableName = useStore((state) => state.updateTableName);
-```
+## Keyboard
 
-### History Pattern
+| | |
+|---|---|
+| `C` | Connect picker |
+| `Ctrl+F` | Search |
+| `Ctrl+C` / `Ctrl+V` | Copy / paste nodes |
+| `Ctrl+Z`, `Ctrl+Shift+Z` / `Ctrl+Y` | Undo / redo |
+| `Delete` / `Backspace` | Delete selection |
+| `Space`-drag, middle-drag | Pan |
+| `Alt`-drag | Bypass grid snapping |
 
-Most actions call `saveToHistory()` before mutations:
-```typescript
-updateTableName: (nodeId, name) => {
-  get().saveToHistory();  // Snapshot BEFORE change
-  set({ /* update */ });
-}
-```
-
-## Key Conventions
-
-### TypeScript
-
-- Strict mode enabled with all flags
-- Use discriminated unions for node types (`data.type === 'table'`)
-- Path alias `@/*` maps to `src/*`
-
-### Types
-
-```typescript
-// Node type narrowing
-if (node.data.type === 'table') {
-  node.data.columns  // TypeScript knows this is TableNodeData
-}
-
-// Cardinality types
-type Cardinality = 'one-to-one' | 'one-to-many' | 'many-to-many'
-
-// ClipboardData for copy-paste validation
-interface ClipboardData {
-  type: 'db-mapper-nodes';
-  version: '1.0';
-  nodes: DBNode[];
-}
-
-// Search types
-type SearchFilter = 'all' | 'tables' | 'columns';
-interface SearchResult {
-  nodeId: string;
-  tableName: string;
-  matchType: 'table' | 'column';
-  columnName?: string;
-  columnId?: string;
-}
-
-// Edge customization
-interface RelationshipEdgeData {
-  // ...
-  color?: 'slate' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink';
-  pattern?: 'solid' | 'dashed' | 'dotted' | 'dash-dot';
-}
-```
-
-### Styling
-
-- Dark mode via class-based approach (`dark:` prefix)
-- HSL CSS variables for theme colors
-- 8 preset colors: slate, red, orange, yellow, green, blue, purple, pink
-- Use `cn()` helper for conditional classes
-
-### Components
-
-- Memoize all node/edge components with `React.memo()`
-- Use `useCallback` for event handlers passed to children
-- Use Radix UI wrappers from `components/ui/`
-- Use `class-variance-authority` for component variants
-
-## Connection Handles
-
-TableNode uses distinct handle shapes for visual clarity:
-- **Top handle** (target): Amber square - receives incoming connections
-- **Bottom handle** (source): Blue circle - initiates outgoing connections
-- **Per-column handles**:
-  - Left (target, ID: `${column.id}-left`): Amber square
-  - Right (source, ID: `${column.id}-right`): Blue circle
-
-When updating edge columns, also update React Flow handles:
-```typescript
-sourceHandle: sourceColumn ? `${sourceColumn}-right` : edge.sourceHandle,
-targetHandle: targetColumn ? `${targetColumn}-left` : edge.targetHandle,
-```
-
-## Global Search
-
-Inline search bar for finding tables and columns across the diagram.
-
-- **Activation**: `Ctrl+F` or click search icon in toolbar
-- **Filters**: `all`, `tables`, `columns`
-- **Results**: Click to select and pan to matching node
-- **Highlights**: Matching tables/columns highlighted with amber ring
-
-Search state (query, results, highlights) is computed in the store via `setSearchQuery` and not persisted.
-
-## Copy-Paste System
-
-**Copy** (`copySelectedNodes`):
-- Reads `node.selected` flag from React Flow
-- Writes `ClipboardData` to navigator.clipboard
-
-**Paste** (`pasteNodes`):
-- Validates clipboard format via `type: 'db-mapper-nodes'`
-- Regenerates all node and column IDs (prevents collisions)
-- Clears `foreignKey` references (original tables don't exist)
-- Preserves relative positions of multi-node selections
-- Adds "(copy)" suffix to names
-
-## Keyboard Shortcuts
-
-- `Ctrl+C`: Copy selected nodes
-- `Ctrl+V`: Paste at viewport center
-- `Ctrl+F`: Open global search
-- `Delete/Backspace`: Delete selected element
-- `Ctrl+Z`: Undo
-- `Ctrl+Shift+Z` / `Ctrl+Y`: Redo
-- `Escape`: Close search (when search is focused)
-
-Shortcuts are disabled when input elements are focused (via `isInputFocused()` helper).
-
-## File Operations
-
-- **Save**: Uses File System API (`showSaveFilePicker`)
-- **Load**: File picker for JSON import
-- **Drag-drop**: Drop `.json` files on canvas to import
-- Format: `{ nodes: DBNode[], edges: DBEdge[] }`
-
-## Node Behaviors
-
-### Tables
-- Columns with data types, constraints (PK, FK, unique, nullable, auto-increment)
-- Per-column connection handles for specific relationships
-- NodeResizer (min: 200x150px)
-
-### Relationships
-- Crow's foot notation via SVG markers
-- Table edges: solid lines with cardinality
-- Note edges: dashed lines, no cardinality
-
-### Groups
-- Container nodes (no handles)
-- Semi-transparent backgrounds
-- NodeResizer (min: 200x100px)
-
-### Notes
-- Double-click to edit content/name inline
-- Single source handle for linking
-- NodeResizer (min: 150x100px)
-
-## Build Configuration
-
-- **Target**: ES2020
-- **Single-file output**: `viteSingleFile` plugin inlines all assets
-- **Asset inline limit**: 100MB (for complete bundling)
-
-## Storage Schema Versioning
-
-The store uses Zustand persist middleware with schema versioning and migrations:
-
-- **Current version**: 2
-- **Storage key**: `db-mapper-storage`
-
-**Migration history**:
-- v0→v1: Added `isNoteLink` field to edges (fixes edge rendering race condition)
-- v1→v2: Added `pattern` field to edges (sets `dashed` default for note links)
-
-When adding new persisted fields, increment the version and add a migration case in `useStore.ts`.
+Shortcuts are suppressed while a text field has focus (`isInputFocused`).
