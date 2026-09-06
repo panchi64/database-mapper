@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import { useReactFlow } from '@xyflow/react';
 import {
   Table,
   StickyNote,
+  Link2,
+  LayoutGrid,
+  Download,
+  FileCode,
+  PanelLeft,
   FolderOpen,
   Undo,
   Redo,
@@ -20,35 +24,46 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useCanvasApi } from '@/components/canvas/canvasApi';
 import { useStore } from '@/store';
 import { useFileOperations } from '@/hooks/useFileOperations';
+import { useExport } from '@/hooks/useExport';
 import { ConfirmDialog } from '@/components/dialogs/ConfirmDialog';
 import { AddTableDialog } from '@/components/dialogs/AddTableDialog';
+import { ImportSqlDialog } from '@/components/dialogs/ImportSqlDialog';
 import { KeyboardShortcutsDialog } from '@/components/dialogs';
 
 export function Toolbar() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showAddTableDialog, setShowAddTableDialog] = useState(false);
+  const [showImportSql, setShowImportSql] = useState(false);
 
-  const { getViewport } = useReactFlow();
+  const canvas = useCanvasApi();
 
-  const getViewportCenter = () => {
-    const viewport = getViewport();
-
-    // Get the actual React Flow canvas dimensions
-    const reactFlowContainer = document.querySelector('.react-flow') as HTMLElement;
-    const canvasWidth = reactFlowContainer?.offsetWidth ?? window.innerWidth;
-    const canvasHeight = reactFlowContainer?.offsetHeight ?? window.innerHeight;
-
-    const centerX = (-viewport.x + canvasWidth / 2) / viewport.zoom;
-    const centerY = (-viewport.y + canvasHeight / 2) / viewport.zoom;
-    return { x: centerX, y: centerY };
-  };
+  // New nodes land in the middle of what the user is currently looking at. The
+  // canvas owns this; it used to be measured off the React Flow container element.
+  const getViewportCenter = () => canvas.viewportCenterWorld();
 
   const theme = useStore((state) => state.theme);
   const setTheme = useStore((state) => state.setTheme);
   const addTable = useStore((state) => state.addTable);
   const addNote = useStore((state) => state.addNote);
+  const openConnect = useStore((state) => state.openConnect);
+  const arrange = useStore((state) => state.arrange);
+  const { exportImage, exportSql } = useExport();
+  const showOutline = useStore((state) => state.showOutline);
+  const toggleOutline = useStore((state) => state.toggleOutline);
+  const hasNodes = useStore((state) => state.nodes.length > 0);
+  const hasMultiSelection = useStore((state) => state.selectedNodeIds.size > 1);
+  // Connecting needs something to connect: two tables at minimum.
+  const hasTwoTables = useStore((state) => state.nodes.filter((n) => n.type === 'table').length >= 2);
   const addGroup = useStore((state) => state.addGroup);
   const undo = useStore((state) => state.undo);
   const redo = useStore((state) => state.redo);
@@ -104,6 +119,23 @@ export function Toolbar() {
           <span className="hidden lg:block text-[10px] text-muted-foreground uppercase tracking-wider px-1 mr-1">File</span>
           <Tooltip>
             <TooltipTrigger asChild>
+              <Button
+                variant="toolbar"
+                size="toolbarIcon"
+                aria-pressed={showOutline}
+                onClick={toggleOutline}
+              >
+                <PanelLeft className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Outline</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{showOutline ? 'Hide' : 'Show'} the diagram outline</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button variant="toolbar" size="toolbarIcon" onClick={saveDiagram}>
                 <Save className="h-4 w-4" />
                 <span className="hidden lg:inline-block ml-2">Save</span>
@@ -123,6 +155,46 @@ export function Toolbar() {
             </TooltipTrigger>
             <TooltipContent>
               <p>Load Diagram</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="toolbar" size="toolbarIcon" disabled={!hasNodes}>
+                    <Download className="h-4 w-4" />
+                    <span className="hidden lg:inline-block ml-2">Export</span>
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Export the diagram</p>
+              </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => void exportImage('png')}>PNG image</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void exportImage('svg')}>SVG image</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => exportSql('postgres')}>SQL — PostgreSQL</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportSql('mysql')}>SQL — MySQL</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportSql('sqlite')}>SQL — SQLite</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="toolbar"
+                size="toolbarIcon"
+                onClick={() => setShowImportSql(true)}
+              >
+                <FileCode className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">SQL</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Import from SQL</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -199,6 +271,55 @@ export function Toolbar() {
 
           <Tooltip>
             <TooltipTrigger asChild>
+              <Button
+                variant="toolbar"
+                size="toolbarIcon"
+                onClick={() => openConnect()}
+                disabled={!hasTwoTables}
+              >
+                <Link2 className="h-4 w-4" />
+                <span className="hidden lg:inline-block ml-2">Connect</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Add Relationship (C)</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="toolbar" size="toolbarIcon" disabled={!hasNodes}>
+                    <LayoutGrid className="h-4 w-4" />
+                    <span className="hidden lg:inline-block ml-2">Arrange</span>
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Auto-arrange the diagram</p>
+              </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => arrange('layered-lr')}>
+                Layered, left to right
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => arrange('layered-tb')}>
+                Layered, top to bottom
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => arrange('grid')}>Grid</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={!hasMultiSelection}
+                onClick={() => arrange('layered-lr', true)}
+              >
+                Selection only
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button variant="toolbar" size="toolbarIcon" onClick={handleAddGroup}>
                 <Group className="h-4 w-4" />
                 <span className="hidden lg:inline-block ml-2">Group</span>
@@ -272,6 +393,8 @@ export function Toolbar() {
           onOpenChange={setShowAddTableDialog}
           onConfirm={handleAddTableConfirm}
         />
+
+        <ImportSqlDialog open={showImportSql} onOpenChange={setShowImportSql} />
       </div>
     </TooltipProvider>
   );

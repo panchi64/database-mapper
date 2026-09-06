@@ -1,146 +1,79 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for working with `src/types/`.
 
-## Type Definitions
+## Scope
 
-This directory contains all TypeScript type definitions for the application's data structures.
+All shared TypeScript definitions live in `src/types/index.ts`. It has **no imports** — it is the root of the dependency graph, and everything else (store, engine, components) depends on it. Keep it that way; a type that needs to import something belongs closer to its owner.
 
-### Core Types
+## Nodes
 
-**Column Data Types**:
+Nodes carry their geometry **flat and explicitly**:
+
 ```typescript
-type ColumnDataType =
-  // Integer types
-  | 'INT' | 'BIGINT' | 'SMALLINT' | 'TINYINT'
-  // Decimal types
-  | 'DECIMAL' | 'NUMERIC' | 'FLOAT' | 'DOUBLE'
-  // String types
-  | 'VARCHAR' | 'CHAR' | 'TEXT' | 'LONGTEXT'
-  // Date/Time types
-  | 'DATE' | 'DATETIME' | 'TIMESTAMP' | 'TIME'
-  // Boolean types
-  | 'BOOLEAN' | 'BIT'
-  // Binary types
-  | 'BLOB' | 'BINARY' | 'VARBINARY'
-  // Special types
-  | 'JSON' | 'UUID' | 'ENUM' | 'SET'
-```
-
-**Column Interface**:
-```typescript
-interface Column {
+interface BaseNode<K extends NodeKind, D> {
   id: string;
-  name: string;
-  dataType: ColumnDataType;
-  length?: number;           // For VARCHAR, CHAR, DECIMAL, etc.
-  nullable: boolean;
-  primaryKey: boolean;
-  unique: boolean;
-  autoIncrement: boolean;
-  defaultValue?: string;
-  comment?: string;
-  foreignKey?: { tableId: string; columnId: string };
+  type: K;            // 'table' | 'group' | 'note'
+  data: D;
+  x: number; y: number; w: number; h: number;
+  autoSize?: boolean; // tables: height derived from column count
+  z: number;          // paint order: groups 0, tables 1, notes 2
+  parentId?: string;  // group containment
+  locked?: boolean;
+}
+
+type DBNode = TableNode | GroupNode | NoteNode;
+```
+
+This replaced React Flow's `Node<D, K>`, where geometry was spread across `position`, `style.width/height` and a `measured` field the library wrote after layout — so a node's real size was only knowable *after* it had been rendered. Nothing could route an edge or place a port without a DOM.
+
+Two consequences worth remembering:
+
+- **Narrow on `node.type`, not `node.data.type`.** Both exist and are kept equal, but only the top-level one is a discriminant TypeScript can use to narrow `node` itself. `node.data.type === 'table'` narrows `node.data` and leaves `node` as the full union.
+- **Table height is derived, never authored.** `intrinsicTableHeight(data)` in `@/engine/geometry` is the authority. Anything that changes a table's column list or comment must re-derive it (the store's `resized` helper does this).
+
+## Edges
+
+```typescript
+interface EndpointRef {
+  nodeId: string;
+  columnId?: string;  // absent -> attaches to the node as a whole
+  side?: Side;        // absent -> the router picks (the normal case)
+}
+
+interface DBEdge {
+  id: string;
+  source: EndpointRef;
+  target: EndpointRef;
+  data: RelationshipEdgeData;
 }
 ```
 
-### Node Data Types
+This replaced the `source` + `sourceHandle` string pair, where the column was encoded into an id like `` `${columnId}-right` `` and parsed back out at every use site.
 
-Each node type has a discriminated union based on `type` field:
+`side` is deliberately optional. Pinning a side at creation produces worse routes than letting the router choose per layout; it is only set when a user explicitly drags to a particular side.
 
-- **TableNodeData**: `{ type: 'table', name, columns[], color?, comment? }`
-- **GroupNodeData**: `{ type: 'group', name, color? }`
-- **NoteNodeData**: `{ type: 'note', name, content, color? }`
+`RelationshipEdgeData` no longer carries `sourceColumn`/`targetColumn` — those duplicated the endpoints. The endpoint is the single source of truth.
 
-Nodes extend React Flow's `Node` type with specific data:
-```typescript
-type TableNode = Node<TableNodeData, 'table'>
-type GroupNode = Node<GroupNodeData, 'group'>
-type NoteNode = Node<NoteNodeData, 'note'>
-type DBNode = TableNode | GroupNode | NoteNode
-```
+## Derived fields
 
-### Edge Types
+`Column.foreignKey` is **derived from the edges, not authored**. The store's `syncForeignKeys` rewrites it whenever edge endpoints change. Never set it directly; create or rewire the edge and let the sync follow.
 
-**Cardinality**: `'one-to-one' | 'one-to-many' | 'many-to-many'`
+## Selection
 
-**RelationshipEdgeData**:
-```typescript
-{
-  type: 'relationship';
-  cardinality?: Cardinality;
-  label?: string;
-  sourceColumn?: string;   // Column ID
-  targetColumn?: string;   // Column ID
-}
-```
+Selection is **not** on the node. It lives in the store as `selectedNodeIds: Set<string>`, so it is never persisted and never lands on the undo stack.
 
-### Clipboard Types
+## Adding a node type
 
-**ClipboardData** (for copy-paste validation):
-```typescript
-{
-  type: 'db-mapper-nodes';  // Type identifier for validation
-  version: '1.0';           // Format version for compatibility
-  nodes: DBNode[];          // Array of copied nodes
-}
-```
+1. Add a data interface with a `type` discriminator.
+2. Add `BaseNode<'yourtype', YourData>` and extend the `DBNode` union.
+3. Give it a draw function in `src/engine/draw/` and a case in the scene builder.
+4. Add store actions if it needs its own mutations.
+5. Add a persist migration if existing diagrams need backfilling — see `docs/MIGRATIONS.md`.
 
-### Application State Types
+## Adding a column data type
 
-**DiagramState** (for export/import):
-```typescript
-{
-  nodes: DBNode[];
-  edges: DBEdge[];
-  viewport?: { x: number; y: number; zoom: number };
-}
-```
-
-**HistoryEntry** (for undo/redo):
-```typescript
-{
-  nodes: DBNode[];
-  edges: DBEdge[];
-}
-```
-
-### Preset Colors
-
-8 colors with hex values:
-```typescript
-const PRESET_COLORS = [
-  { name: 'slate', value: '#64748b' },
-  { name: 'red', value: '#ef4444' },
-  { name: 'orange', value: '#f97316' },
-  { name: 'yellow', value: '#eab308' },
-  { name: 'green', value: '#22c55e' },
-  { name: 'blue', value: '#3b82f6' },
-  { name: 'purple', value: '#a855f7' },
-  { name: 'pink', value: '#ec4899' },
-]
-```
-
-### Type Guards
-
-When working with nodes, use type narrowing:
-```typescript
-if (node.data.type === 'table') {
-  // node.data is TableNodeData
-  node.data.columns  // accessible
-}
-```
-
-### Adding New Types
-
-When adding new column data types:
-1. Add to `ColumnDataType` union
-2. Update `SQL_DATA_TYPES` array in ColumnEditor
-3. Update length field visibility logic if type needs length parameter
-
-When adding new node types:
-1. Create data interface with `type` discriminator
-2. Add to `DBNode` union
-3. Create component in `components/nodes/`
-4. Register in nodeTypes object
-5. Add to store actions if needed
+1. Add to the `ColumnDataType` union.
+2. Add to the `SQL_DATA_TYPES` array in the same file (the UI selects read it).
+3. Update the length-field visibility logic in `ColumnEditor` if it takes a length.
+4. Add a mapping in `src/engine/sql/dialects.ts` so DDL import recognises it.

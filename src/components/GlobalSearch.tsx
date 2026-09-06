@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
-import { useReactFlow } from '@xyflow/react';
 import { Search, Table, Columns, ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
+import { useCanvasApi } from '@/components/canvas/canvasApi';
 import {
   Dialog,
   DialogContent,
@@ -88,7 +88,7 @@ const filterLabels: Record<SearchFilter, string> = {
 
 export function GlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const { setCenter } = useReactFlow();
+  const canvas = useCanvasApi();
   const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   const {
@@ -130,18 +130,12 @@ export function GlobalSearch() {
 
       setSelectedNode(result.nodeId);
 
-      const nodeWidth = (node.style?.width as number) || 250;
-      const nodeHeight = (node.style?.height as number) || 200;
-      setCenter(
-        node.position.x + nodeWidth / 2,
-        node.position.y + nodeHeight / 2,
-        { zoom: 1, duration: 500 }
-      );
+      canvas.centerOnNode(node.id);
 
       // Close the dialog after navigating
       setSearchOpen(false);
     },
-    [nodes, setSelectedNode, setCenter, setSearchOpen]
+    [nodes, setSelectedNode, canvas, setSearchOpen]
   );
 
   const handleFilterSelect = useCallback((filter: SearchFilter) => {

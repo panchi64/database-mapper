@@ -1,119 +1,79 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for `src/components/`.
 
-## Components Architecture
+## Layout
 
-This directory contains all React components organized by their function in the application.
+- **`canvas/`** — the diagram surface. React's only contact with the rendering
+  engine in `src/engine/`.
+- **`panels/`** — right sidebar: `PropertiesPanel`, `ColumnEditor`, `ColorPicker`
+- **`dialogs/`** — `AddTableDialog`, `ConfirmDialog`, `KeyboardShortcutsDialog`
+- **`ui/`** — Radix primitives with Tailwind styling
+- `Toolbar.tsx`, `GlobalSearch.tsx`, `ThemeProvider.tsx`
 
-### Directory Structure
+There is no `nodes/` or `edges/` directory any more. Tables, groups, notes and
+relationships are not React components — they are painted by `src/engine/draw/`.
+A change to how a table *looks* goes there, not here.
 
-- **nodes/**: React Flow node type components (TableNode, GroupNode, NoteNode) - all memoized
-- **edges/**: React Flow edge type components (RelationshipEdge) - memoized
-- **panels/**: Right sidebar editor components (PropertiesPanel, ColumnEditor, ColorPicker)
-- **dialogs/**: Modal dialog components (AddTableDialog, ConfirmDialog, KeyboardShortcutsDialog)
-- **ui/**: Radix UI primitive wrappers with Tailwind styling
+## The canvas boundary
 
-### Component Patterns
+`canvas/DiagramCanvas.tsx` is the surface. `canvas/useCanvasEngine.ts` owns the
+engine objects and the render loop.
 
-**Memoization**: All node and edge components use `React.memo()`:
-- TableNode, GroupNode, NoteNode, RelationshipEdge
-- ColumnRow (inside TableNode) is also memoized
-- Use `useCallback` for event handlers passed to children
+**Nothing in the canvas re-renders per frame.** The store subscription writes into
+a ref and calls `renderer.invalidate()`; the renderer pulls from that ref inside
+its own rAF. React re-renders only for the context menu and the inline editor.
 
-**Radix UI Wrappers**: All components in `ui/` follow the same pattern:
-- Import Radix primitives
-- Re-export parts with Tailwind styling via `className`
-- Use `class-variance-authority` for variant-based styling
-- Forward refs for accessibility
+Three pieces of DOM necessarily float above the canvas:
 
-### Node Components
+- `CanvasContextMenu` — **one** Radix trigger for the whole canvas. Each node used
+  to wrap itself in a `ContextMenuTrigger`, which only worked while every node was
+  a DOM element. A capture-phase `contextmenu` handler hit-tests *before* Radix
+  opens, so the menu can describe whatever was actually clicked.
+- `InlineEditor` — a real `<input>`/`<textarea>` positioned over the text being
+  edited and scaled with the viewport. A canvas cannot hold a caret. Exactly one
+  is alive at a time.
+- `CanvasControls` / `CanvasMinimap` — zoom, fit, and an overview.
 
-Each node component receives `data` prop with specific shape:
-- **TableNode**: `{ type: 'table', name, columns, color?, comment? }`
-- **GroupNode**: `{ type: 'group', name, color? }`
-- **NoteNode**: `{ type: 'note', name, content, color? }`
+Radix portals to `document.body`, so menus and dialogs float above the canvas with
+no z-index fight.
 
-**Connection Handles** (TableNode uses distinct shapes for clarity):
-- Top handle (target): Amber square `!rounded-sm` - receives connections
-- Bottom handle (source): Blue circle `!rounded-full` - initiates connections
-- Per-column handles:
-  - Left (target, ID: `${column.id}-left`): Amber square
-  - Right (source, ID: `${column.id}-right`): Blue circle
+## Reaching the camera from outside
 
-**NoteNode Inline Editing**:
-- Double-click content or name to enter edit mode
-- Escape cancels, blur saves
-- Uses local state for editing (`isEditing`, `isEditingName`)
+`canvas/canvasApi.ts` exposes `centerOnNode` and `viewportCenterWorld`. This is
+what replaced `useReactFlow()`; global search and the toolbar use it.
 
-**Context Menus**: All node components have right-click context menus with Copy and Delete actions.
+It is deliberately imperative and deliberately small. Anything that needs the
+viewport *continuously* lives inside the canvas and subscribes to the controller
+with `useViewportValue` — panning changes it ~60 times a second, so re-rendering
+on it is always opt-in.
 
-**NodeResizer**: Each node has resize constraints:
-- TableNode: min 200x150px
-- GroupNode: min 200x100px
-- NoteNode: min 150x100px
+The context holds a *ref*, not the API itself: the canvas publishes it after
+mounting, and every consumer calls it from an event handler, so nobody needs to
+re-render when it appears.
 
-### Edge Components
+## Store access
 
-**RelationshipEdge** renders database relationships with crow's foot notation:
-- `CrowsFootMarker` sub-component renders SVG markers
-- One side: perpendicular line (|), Many side: crow's foot (<)
-- Table edges: solid lines with cardinality markers
-- Note edges: dashed lines (4 4 pattern), no cardinality
-- Selected state: primary color with 2.5px stroke
-
-### Panels
-
-**PropertiesPanel** conditionally renders editors based on selected node/edge type:
-- Empty state: Shows onboarding steps if no nodes exist
-- Table: name, color (ColorPicker), comment, column list
-- Group: name, color
-- Note: name, content textarea, color
-- Edge: cardinality selector, source/target column selectors, label
-
-Uses `useShallow` for accessing multiple related properties efficiently.
-
-**ColumnEditor** handles complex column management:
-- Collapsible UI: toggle between row view and expanded form
-- Fields: name, data type, length (conditional), default value
-- Constraints: PK, unique, nullable, auto-increment toggles with tooltips
-- Double-tap delete confirmation (3-second timeout)
-
-**ColorPicker**: Grid of 8 preset colors with checkmark indicator for selection.
-
-### Styling Conventions
-
-- Dark mode: Use `dark:` prefix for dark mode variants
-- Colors: Use HSL CSS variables (e.g., `hsl(var(--primary))`)
-- 8 preset colors: slate, red, orange, yellow, green, blue, purple, pink
-- Use `cn()` helper for conditional class merging
-
-### Key Interactions
-
-Components communicate with Zustand store via `useStore` hook:
 ```typescript
-// Selector pattern - minimizes re-renders
+// Single property
 const nodes = useStore((state) => state.nodes);
-const selectedNode = useStore((state) =>
-  state.nodes.find(n => n.id === state.selectedNodeId)
-);
 
-// Multiple properties with useShallow
+// Several related properties
 const { nodes, edges } = useStore(useShallow((state) => ({
   nodes: state.nodes,
-  edges: state.edges
+  edges: state.edges,
 })));
-
-// Action access
-const updateTableName = useStore((state) => state.updateTableName);
 ```
 
-### Keyboard Shortcuts (handled in App.tsx)
+Inside the engine, read the store imperatively with `useStore.getState()` — engine
+callbacks fire outside React's render cycle.
 
-- `Ctrl+C`: Copy selected nodes (via `copySelectedNodes`)
-- `Ctrl+V`: Paste at viewport center (via `pasteNodes`)
-- `Delete/Backspace`: Delete selected element
-- `Ctrl+Z`: Undo
-- `Ctrl+Shift+Z` / `Ctrl+Y`: Redo
+## Conventions
 
-Shortcuts disabled when input elements are focused (checked via `isInputFocused()` helper).
+- Radix wrappers in `ui/` are not modified by hand.
+- `cn()` for conditional classes; `class-variance-authority` for variants.
+- A file exporting a component exports *only* components — React Fast Refresh
+  needs that. Hooks and context objects go in a sibling `.ts` file (see
+  `canvas/canvasApi.ts` next to `canvas/CanvasApiProvider.tsx`).
+- Keyboard shortcuts live in `src/hooks/useKeyboardShortcuts.ts`, not in a
+  component.

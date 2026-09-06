@@ -1,80 +1,94 @@
 # DB Mapper
 
-A visual database mapping designer built with React. Create database diagrams with tables, relationships, groups, and notes—all in your browser.
+A visual database schema designer that runs entirely in your browser and builds
+to a single HTML file you can email to someone.
 
 ## Features
 
-- **Tables** - Create tables with columns, data types (VARCHAR, INT, TEXT, etc.), and constraints (PK, FK, unique, nullable, auto-increment)
-- **Relationships** - Connect tables with crow's foot notation showing cardinality (one-to-one, one-to-many, many-to-many)
-- **Groups** - Organize tables into collapsible containers
-- **Notes** - Add freeform text annotations anywhere on the canvas
-- **Import/Export** - Save diagrams as JSON files and load them later
-- **Undo/Redo** - Full history support with 50-entry limit
-- **Themes** - Light, dark, and system-preference modes
-- **Offline-Ready** - Works entirely in the browser with localStorage persistence
+- **Tables** — columns with data types and constraints (PK, FK, unique, nullable,
+  auto-increment). Tables size themselves to their contents.
+- **Relationships** — crow's foot notation for one-to-one, one-to-many and
+  many-to-many, with an on-canvas legend so the notation is never a guess.
+- **Readable edges** — orthogonal routing that goes *around* tables rather than
+  behind them, and spreads parallel relationships into separate lanes. Drag a
+  line to pin a bend; drag an end to re-anchor it to a different column.
+- **Connect without dragging** — press `C` for a searchable picker that suggests
+  the target from the `<thing>_id` convention and infers the cardinality.
+- **Auto-arrange** — layered layout, left-to-right or top-to-bottom, or a grid.
+- **SQL** — paste `CREATE TABLE` statements to build a diagram; export back to
+  PostgreSQL, MySQL or SQLite.
+- **Export** — PNG and SVG as well as JSON.
+- **Groups and notes** — regions and freeform annotations.
+- **Outline panel** — a navigable tree of the schema, which is also how you
+  select and copy text out of a canvas.
+- **Undo/redo, themes, offline** — 50 steps of history, light/dark/system, and
+  localStorage persistence.
 
-## Quick Start
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-Open http://localhost:5173 in your browser.
-
-## Building a Single HTML File
-
-DB Mapper builds into a single self-contained HTML file that works offline and can be shared or hosted anywhere without server dependencies.
+## Quick start
 
 ```bash
-# Build the application
-npm run build
+bun install
+bun dev
 ```
 
-This creates `dist/index.html` (~560KB) containing all JavaScript, CSS, and assets inlined. You can:
+Open http://localhost:5173.
 
-- Open it directly in any modern browser
-- Share it as a single file
-- Host it on any static file server
-- Run it completely offline
+Load `fixtures/ecommerce.json` from the toolbar to see a worked example — see
+[`fixtures/README.md`](fixtures/README.md).
 
-## Development Commands
+## Single-file build
+
+```bash
+bun run build
+```
+
+Produces `dist/index.html` (~515 KB) with all JavaScript, CSS and assets inlined.
+Open it directly, share it, host it on any static server, or run it offline.
+
+The build **fails if the bundle exceeds its budget** — see
+`scripts/check-bundle-size.ts`. The single-file property is easy to erode by
+accident, so it is enforced rather than hoped for.
+
+## Commands
 
 | Command | Description |
-|---------|-------------|
-| `npm run dev` | Start Vite dev server with hot reload |
-| `npm run build` | TypeScript check + production build |
-| `npm run lint` | Run ESLint |
-| `npm run preview` | Preview the production build locally |
+|---|---|
+| `bun dev` | Dev server with hot reload |
+| `bun run build` | Typecheck, build, and check the bundle size |
+| `bun run lint` | ESLint |
+| `bun run test` | Vitest |
+| `bun run coverage` | Vitest with coverage |
+| `bun run fixtures` | Regenerate the sample diagrams |
+| `bun run scripts/route-perf.ts` | Edge routing against the performance budget |
 
-## Technology Stack
+## Technology
 
-- **React** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool with single-file bundling
-- **React Flow** - Diagram canvas and interactions
-- **Zustand** - State management with persistence
-- **Radix UI** - Accessible UI components
-- **Tailwind CSS** - Utility-first styling
+- **React** + **TypeScript** + **Vite**
+- **A custom canvas engine** (`src/engine/`) — the diagram is not drawn by a
+  library. Geometry, routing, layout, hit-testing and the SQL reader are all
+  first-party, which is what keeps a feature-complete schema designer inside one
+  ~515 KB file with no diagramming dependency.
+- **Zustand** for state, with a versioned, migrating localStorage schema
+- **Radix UI** primitives, **Tailwind CSS**
 
-## Keyboard Shortcuts
+## Keyboard shortcuts
 
 | Shortcut | Action |
-|----------|--------|
-| `Delete` / `Backspace` | Delete selected element |
+|---|---|
+| `C` | Add a relationship |
+| `Ctrl+F` | Search tables and columns |
+| `Ctrl+C` / `Ctrl+V` | Copy / paste selected nodes |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Shift+Z` / `Ctrl+Y` | Redo |
+| `Delete` / `Backspace` | Delete the selection |
+| `Space`-drag or middle-drag | Pan |
+| `Alt`-drag | Move freely, ignoring the grid |
 
-## Data Storage
+## Data
 
-All diagram data persists automatically to your browser's localStorage. Use the toolbar buttons to:
-
-- **Export** - Download your diagram as a JSON file
-- **Import** - Load a previously exported diagram
-- **Clear** - Reset the canvas (with confirmation)
+Diagrams persist to localStorage automatically. Exported `.json` files carry a
+format version, and files written by any older build still open — the importer
+runs them through the same migration chain (see [`docs/MIGRATIONS.md`](docs/MIGRATIONS.md)).
 
 ## License
 

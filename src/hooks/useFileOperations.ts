@@ -1,13 +1,13 @@
+import { useCallback } from 'react';
 import { useStore } from '@/store';
-import { DiagramState } from '@/types';
+import { DiagramParseError, parseDiagramFile, serializeDiagram } from '@/lib/diagramFile';
 
 export function useFileOperations() {
   const exportDiagram = useStore((state) => state.exportDiagram);
   const importDiagram = useStore((state) => state.importDiagram);
 
-  const saveDiagram = async () => {
-    const data = exportDiagram();
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
+  const saveDiagram = useCallback(async () => {
+    const blob = new Blob([JSON.stringify(serializeDiagram(exportDiagram()), null, 2)], {
       type: 'application/json',
     });
 
@@ -29,44 +29,63 @@ export function useFileOperations() {
         throw err;
       }
     }
-  };
+  }, [exportDiagram]);
 
-  const loadDiagram = () => {
+  /**
+   * Read, validate and load a diagram file.
+   *
+   * Shared by the file picker and the canvas drop target, which previously each
+   * carried their own copy of the read/parse/alert dance.
+   */
+  const readDiagramFile = useCallback(
+    (file: File) => {
+      const reader = new FileReader();
+
+      reader.onload = (event) => {
+        try {
+          const { diagram, warnings } = parseDiagramFile(
+            JSON.parse(event.target?.result as string)
+          );
+          importDiagram(diagram);
+
+          if (warnings.length > 0) {
+            console.warn('[db-mapper] Diagram imported with warnings:', warnings);
+          }
+        } catch (err) {
+          console.error('Failed to load diagram file:', err);
+          alert(
+            err instanceof DiagramParseError
+              ? `Could not open this diagram.\n\n${err.message}`
+              : 'Could not open this file — it is not valid JSON.'
+          );
+        }
+      };
+
+      reader.onerror = () => alert(`Could not read "${file.name}".`);
+      reader.readAsText(file);
+    },
+    [importDiagram]
+  );
+
+  const loadDiagram = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const data = JSON.parse(e.target?.result as string) as DiagramState;
-            importDiagram(data);
-          } catch (err) {
-            alert('Invalid diagram file');
-          }
-        };
-        reader.readAsText(file);
-      }
+      if (file) readDiagramFile(file);
     };
     input.click();
-  };
+  }, [readDiagramFile]);
 
-  const handleFileDrop = (file: File) => {
-    if (file.type === 'application/json' || file.name.endsWith('.json')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target?.result as string) as DiagramState;
-          importDiagram(data);
-        } catch {
-          alert('Invalid diagram file');
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
+  const handleFileDrop = useCallback(
+    (file: File) => {
+      if (file.type === 'application/json' || file.name.endsWith('.json')) {
+        readDiagramFile(file);
+      }
+    },
+    [readDiagramFile]
+  );
 
   return { saveDiagram, loadDiagram, handleFileDrop };
 }
